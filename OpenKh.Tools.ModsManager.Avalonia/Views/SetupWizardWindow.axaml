@@ -8,11 +8,17 @@
         Height="560" Width="460" CanResize="False"
         Background="{Binding ColorTheme.BackgroundColor}">
     <Window.Styles>
-        <Style Selector="TextBlock">
-            <Setter Property="Foreground" Value="{Binding ColorTheme.TextColor}"/>
+        <!-- Scope to page panels: a blanket TextBlock style would also hit
+             the TextBlocks generated inside ComboBox selection boxes, where
+             the DataContext is the item string and the binding fails. -->
+        <Style Selector="StackPanel > TextBlock, StackPanel > Grid > TextBlock">
+            <Setter Property="Foreground" Value="{Binding $parent[Window].DataContext.ColorTheme.TextColor}"/>
         </Style>
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="{Binding ColorTheme.TextColor}"/>
+            <Setter Property="Foreground" Value="{Binding $parent[Window].DataContext.ColorTheme.TextColor}"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Foreground" Value="{Binding $parent[Window].DataContext.ColorTheme.TextColor}"/>
         </Style>
     </Window.Styles>
     <Grid RowDefinitions="Auto,*,Auto" Margin="10">
