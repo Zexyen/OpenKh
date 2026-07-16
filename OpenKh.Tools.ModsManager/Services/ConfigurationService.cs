@@ -26,6 +26,11 @@ namespace OpenKh.Tools.ModsManager.Services
                 .Build();
 
             public int WizardVersionNumber { get; set; }
+            public double WindowWidth { get; internal set; }
+            public double WindowHeight { get; internal set; }
+            public int WindowX { get; internal set; }
+            public int WindowY { get; internal set; }
+            public bool WindowMaximized { get; internal set; }
             public string ModCollectionPath { get; internal set; }
             public string ModCollectionsPath { get; internal set; }
             public string GameModPath { get; internal set; }
@@ -74,7 +79,40 @@ namespace OpenKh.Tools.ModsManager.Services
             }
         }
 
-        private static string StoragePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        private static string StoragePath = GetWritableStoragePath();
+
+        // The tool historically keeps its configuration and mods next to the
+        // executable (portable install). That is not possible when the
+        // executable directory is read-only — e.g. the Linux AppImage runs
+        // from a read-only squashfs mount — so fall back to the per-user
+        // configuration directory in that case.
+        private static string GetWritableStoragePath()
+        {
+            var exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            if (IsDirectoryWritable(exeDir))
+                return exeDir;
+
+            var dataDir = Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData),
+                "OpenKh",
+                "ModsManager");
+            Directory.CreateDirectory(dataDir);
+            return dataDir;
+        }
+
+        private static bool IsDirectoryWritable(string dir)
+        {
+            try
+            {
+                var probe = Path.Combine(dir, $".openkh-write-probe-{System.Guid.NewGuid():N}");
+                using (File.Create(probe, 1, FileOptions.DeleteOnClose)) { }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         private static string ConfigPath = Path.Combine(StoragePath, "mods-manager.yml");
         private static string EnabledModsPathKH1 = Path.Combine(StoragePath, "mods-KH1.txt");
         private static string EnabledModsPathKH2 = Path.Combine(StoragePath, "mods-KH2.txt");
@@ -591,6 +629,56 @@ namespace OpenKh.Tools.ModsManager.Services
             set
             {
                 _config.DarkMode = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static double WindowWidth
+        {
+            get => _config.WindowWidth;
+            set
+            {
+                _config.WindowWidth = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static double WindowHeight
+        {
+            get => _config.WindowHeight;
+            set
+            {
+                _config.WindowHeight = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static int WindowX
+        {
+            get => _config.WindowX;
+            set
+            {
+                _config.WindowX = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static int WindowY
+        {
+            get => _config.WindowY;
+            set
+            {
+                _config.WindowY = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static bool WindowMaximized
+        {
+            get => _config.WindowMaximized;
+            set
+            {
+                _config.WindowMaximized = value;
                 _config.Save(ConfigPath);
             }
         }

@@ -1,0 +1,90 @@
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using OpenKh.Tools.Common.Avalonia;
+using OpenKh.Tools.ModsManager.Services;
+using System.Collections.Generic;
+using System.Windows;
+using Xe.Tools.Wpf.Commands;
+using Xe.Tools.Wpf.Dialogs;
+
+namespace OpenKh.Tools.ModsManager.Views
+{
+    public partial class InstallModView : DialogWindowBase
+    {
+        public ColorThemeService ColorTheme => ColorThemeService.Instance;
+        private static readonly IEnumerable<FileDialogFilter> _zipFilter = FileDialogFilterComposer
+            .Compose()
+            .AddExtensions("Mod archive", "zip", "kh2pcpatch", "kh1pcpatch", "compcpatch", "bbspcpatch", "dddpcpatch", "lua");
+
+        public RelayCommand CloseCommand { get; }
+        public string RepositoryName { get; set; }
+        public string BranchName { get; set; }
+        public bool IsZipFile { get; private set; }
+        public bool IsLuaFile { get; private set; } = false;
+
+        public InstallModView()
+        {
+            InitializeComponent();
+            DataContext = this;
+
+            CloseCommand = new RelayCommand(_ => Close());
+            Opened += (_, _) => txtSourceModUrl.Focus();
+        }
+
+        private void Install_Click(object sender, RoutedEventArgs e)
+        {
+            var isBlocked = false;
+            var blockedMessage = string.Empty;
+            if (ModsService.IsUserBlocked(RepositoryName))
+            {
+                isBlocked = true;
+                blockedMessage = "The author of this mod violated OpenKH rules therefore we do not recommend their mods. Do you wish to install it anyway?";
+            }
+            else if (ModsService.IsModBlocked(RepositoryName))
+            {
+                isBlocked = true;
+                blockedMessage = "The selected mod violates OpenKH rules, therefore we do not recommend its installation. Do you wish to install it anyway?";
+            }
+
+            if (isBlocked)
+            {
+                var result = MessageBox.Show(blockedMessage, $"Warning on installing {RepositoryName}", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                DialogResult = result == MessageBoxResult.Yes;
+            }
+            else
+                DialogResult = true;
+
+            Close();
+        }
+
+        private void InstallLocalFile_Click(object sender, RoutedEventArgs e)
+        {
+            FileDialog.OnOpen(fileName =>
+            {
+                if (!fileName.Contains(".lua"))
+                {
+                    IsZipFile = true;
+                    RepositoryName = fileName;
+                    DialogResult = true;
+                    Close();
+                }
+                else
+                {
+                    IsZipFile = false;
+                    IsLuaFile = true;
+                    RepositoryName = fileName;
+                    DialogResult = true;
+                    Close();
+                }
+            }, _zipFilter);
+        }
+
+        private void txtSourceModUrl_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+                Install_Click(sender, e);
+
+            e.Handled = true;
+        }
+    }
+}
