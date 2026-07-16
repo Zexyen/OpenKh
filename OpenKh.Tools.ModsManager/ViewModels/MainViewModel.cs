@@ -961,7 +961,10 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                             return Task.CompletedTask;
                         }
                     }
-                    if (ConfigurationService.PCVersion == "Steam" && !(_launchGame == "kh3d") && ConfigurationService.SteamAPITrick1525 == false)
+                    // On Linux the games only run through Proton, so the Steam
+                    // version always boots via the Steam client regardless of
+                    // the steam_appid.txt direct-launch trick.
+                    if (ConfigurationService.PCVersion == "Steam" && !(_launchGame == "kh3d") && (ConfigurationService.SteamAPITrick1525 == false || !OperatingSystem.IsWindows()))
                     {
                         if (Directory.Exists(ConfigurationService.PcReleaseLocation))
                         {
@@ -996,7 +999,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                             return Task.CompletedTask;
                         }
                     }
-                    else if (ConfigurationService.PCVersion == "Steam" && _launchGame == "kh3d" && ConfigurationService.SteamAPITrick28 == false)
+                    else if (ConfigurationService.PCVersion == "Steam" && _launchGame == "kh3d" && (ConfigurationService.SteamAPITrick28 == false || !OperatingSystem.IsWindows()))
                     {
                         if (Directory.Exists(ConfigurationService.PcReleaseLocationKH3D))
                         {
@@ -1033,6 +1036,19 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                     }
                     else
                     {
+                        // Direct executable launch: only possible on Windows;
+                        // on Linux the Windows executables need Proton, which
+                        // only Steam provides.
+                        if (!OperatingSystem.IsWindows())
+                        {
+                            MessageBox.Show(
+                            "Launching the game executable directly is not supported on Linux. " +
+                            "Select the Steam launcher in the setup wizard so the game can be started through the Steam client.",
+                            "Run error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            CloseAllWindows();
+                            return Task.CompletedTask;
+                        }
+
                         string filename = "";
 
                         try

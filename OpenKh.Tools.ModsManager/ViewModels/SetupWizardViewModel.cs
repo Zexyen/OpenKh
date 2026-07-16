@@ -333,7 +333,10 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                 switch (ConfigurationService.PCVersion)
                 {
                     case "Steam":
-                        WizardPageAfterLuaBackend = PageSteamAPITrick;
+                        // The steam_appid.txt direct-launch trick is
+                        // Windows-only; on Linux the game always starts
+                        // through the Steam client, so skip that page.
+                        WizardPageAfterLuaBackend = OperatingSystem.IsWindows() ? PageSteamAPITrick : PageGameData;
                         return 1;
                     case "Other":
                         WizardPageAfterLuaBackend = PageGameData;
@@ -349,7 +352,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                 {
                     case 1:
                         ConfigurationService.PCVersion = "Steam";
-                        WizardPageAfterLuaBackend = PageSteamAPITrick;
+                        WizardPageAfterLuaBackend = OperatingSystem.IsWindows() ? PageSteamAPITrick : PageGameData;
                         break;
                     case 2:
                         ConfigurationService.PCVersion = "Other";
