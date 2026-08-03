@@ -2,6 +2,8 @@ using OpenKh.Common;
 using OpenKh.Kh1;
 using OpenKh.Kh2;
 using OpenKh.Recom;
+using OpenKh.Tools.ModsManager.Interfaces;
+using OpenKh.Tools.ModsManager.Models;
 using System;
 using System.IO;
 using System.Linq;
@@ -11,7 +13,7 @@ using Xe.IO;
 
 namespace OpenKh.Tools.ModsManager.Services
 {
-    public class GameDataExtractionService
+    public class GameDataExtractionService : IGameDataExtractionOperations
     {
         private const int BufferSize = 65536;
         private const string REMASTERED_FILES_FOLDER_NAME = "remastered";
@@ -29,6 +31,16 @@ namespace OpenKh.Tools.ModsManager.Services
             string gameDataLocation,
             Action<float> onProgress)
         {
+            await ExtractKh1Ps2EditionAsync(isoLocation, gameDataLocation, onProgress, CancellationToken.None);
+        }
+
+        public async Task ExtractKh1Ps2EditionAsync(
+            string isoLocation,
+            string gameDataLocation,
+            Action<float> onProgress,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             var fileBlocks = File.OpenRead(isoLocation).Using(stream =>
             {
                 var bufferedStream = new BufferedStream(stream);
@@ -61,6 +73,7 @@ namespace OpenKh.Tools.ModsManager.Services
                 var fileProcessed = 0;
                 foreach (var fileEntry in img.Entries)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var fileName = Idx1Name.Lookup(fileEntry.Value) ?? $"@noname/{fileEntry.Value.Hash:X08}";
                     using var stream = img.FileOpen(fileEntry.Value);
                     if (stream == null)
@@ -81,7 +94,7 @@ namespace OpenKh.Tools.ModsManager.Services
                 }
 
                 onProgress(1.0f);
-            });
+            }, cancellationToken);
         }
 
         public async Task ExtractRecomPs2EditionAsync(
@@ -89,12 +102,23 @@ namespace OpenKh.Tools.ModsManager.Services
             string gameDataLocation,
             Action<float> onProgress)
         {
+            await ExtractRecomPs2EditionAsync(isoLocation, gameDataLocation, onProgress, CancellationToken.None);
+        }
+
+        public async Task ExtractRecomPs2EditionAsync(
+            string isoLocation,
+            string gameDataLocation,
+            Action<float> onProgress,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             using var stream = File.OpenRead(isoLocation);
             var rdi_stream = IsoUtility.GetSectors(stream, 0x244, stream.SetPosition(0x244 * 0x800 + 8).ReadInt16() + 1);
             var rdi = RootDirInfo.Read(rdi_stream);
             await Task.Run(() => {
+                cancellationToken.ThrowIfCancellationRequested();
                 rdi.ExtractFiles(stream, Path.Combine(gameDataLocation, "Recom"), onProgress);
-            });
+            }, cancellationToken);
             stream.Close();
         }
 
@@ -103,6 +127,16 @@ namespace OpenKh.Tools.ModsManager.Services
             string gameDataLocation,
             Action<float> onProgress)
         {
+            await ExtractKh2Ps2EditionAsync(isoLocation, gameDataLocation, onProgress, CancellationToken.None);
+        }
+
+        public async Task ExtractKh2Ps2EditionAsync(
+            string isoLocation,
+            string gameDataLocation,
+            Action<float> onProgress,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             var fileBlocks = File.OpenRead(isoLocation).Using(stream =>
             {
                 var bufferedStream = new BufferedStream(stream);
@@ -135,6 +169,7 @@ namespace OpenKh.Tools.ModsManager.Services
                 var fileProcessed = 0;
                 foreach (var fileEntry in img.Entries)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var fileName = IdxName.Lookup(fileEntry) ?? $"@{fileEntry.Hash32:08X}_{fileEntry.Hash16:04X}";
                     using var stream = img.FileOpen(fileEntry);
                     var fileDestination = Path.Combine(gameDataLocation, "kh2", fileName);
@@ -150,7 +185,7 @@ namespace OpenKh.Tools.ModsManager.Services
                 }
 
                 onProgress(1.0f);
-            });
+            }, cancellationToken);
         }
 
         public async Task ExtractKhPcEditionAsync(
@@ -357,7 +392,79 @@ namespace OpenKh.Tools.ModsManager.Services
                     }
                 }
                 onProgress(1);
-            });
+            }, cancellationToken);
+        }
+
+        public async Task<GameDataExtractionResult> ExtractAsync(
+            GameDataExtractionRequest request,
+            IProgress<GameDataExtractionProgress> progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.DestinationPath))
+                return new GameDataExtractionResult(OperationOutcome.Failure(
+                    OperationFailureKind.InvalidRequest, "An extraction destination is required."));
+
+            Action<float> report = value => progress?.Report(new GameDataExtractionProgress(value));
+            try
+            {
+                if (request.Source == GameDataExtractionSource.Ps2Iso)
+                {
+                    if (string.IsNullOrWhiteSpace(request.IsoPath) || request.IsoGame == null)
+                        return new GameDataExtractionResult(OperationOutcome.Failure(
+                            OperationFailureKind.InvalidRequest, "A PS2 ISO path and game identifier are required."));
+
+                    switch (request.IsoGame.Value)
+                    {
+                        case WizardGameId.KingdomHearts1:
+                            await ExtractKh1Ps2EditionAsync(request.IsoPath, request.DestinationPath, report, cancellationToken);
+                            break;
+                        case WizardGameId.KingdomHearts2:
+                            await ExtractKh2Ps2EditionAsync(request.IsoPath, request.DestinationPath, report, cancellationToken);
+                            break;
+                        case WizardGameId.ReChainOfMemories:
+                            await ExtractRecomPs2EditionAsync(request.IsoPath, request.DestinationPath, report, cancellationToken);
+                            break;
+                        default:
+                            return new GameDataExtractionResult(OperationOutcome.Failure(
+                                OperationFailureKind.Unsupported, "The selected game is not supported for PS2 ISO extraction."));
+                    }
+                }
+                else
+                {
+                    var language = string.IsNullOrWhiteSpace(request.PcLanguageFolder) ? "en" : request.PcLanguageFolder;
+                    await ExtractKhPcEditionAsync(
+                        request.DestinationPath,
+                        report,
+                        file => Path.Combine(request.Pc1525Path, "Image", language, file),
+                        file => Path.Combine(request.Pc28Path, "Image", language, file),
+                        request.ExtractKh1,
+                        request.ExtractKh2,
+                        request.ExtractBbs,
+                        request.ExtractRecom,
+                        request.ExtractKh3d,
+                        request.RetryAsync ?? (_ => Task.FromResult(false)),
+                        cancellationToken);
+                }
+
+                return new GameDataExtractionResult(OperationOutcome.Success(changed: true));
+            }
+            catch (OperationCanceledException)
+            {
+                return new GameDataExtractionResult(OperationOutcome.Failure(
+                    OperationFailureKind.Cancelled, "Extraction was cancelled."));
+            }
+            catch (BadConfigurationException ex)
+            {
+                return new GameDataExtractionResult(OperationOutcome.Failure(OperationFailureKind.InvalidData, ex.Message));
+            }
+            catch (IOException ex)
+            {
+                return new GameDataExtractionResult(OperationOutcome.Failure(OperationFailureKind.FileSystem, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return new GameDataExtractionResult(OperationOutcome.Failure(OperationFailureKind.Unexpected, ex.Message));
+            }
         }
     }
 }
