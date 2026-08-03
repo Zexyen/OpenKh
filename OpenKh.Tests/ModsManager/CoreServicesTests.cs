@@ -1,10 +1,10 @@
 using OpenKh.Patcher;
 using OpenKh.Tools.ModsManager.Exceptions;
 using OpenKh.Tools.ModsManager.Interfaces;
+using OpenKh.Tools.ModsManager.Models;
 using OpenKh.Tools.ModsManager.Services;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -28,28 +28,58 @@ namespace OpenKh.Tests.ModsManager
             Assert.Equal(expected, matcher(candidate));
         }
 
-        [Fact]
-        public void WizardPageStackTracksTheVisitedBranchAndRaisesBackNotification()
+        [Theory]
+        [InlineData(WizardGameEdition.OpenKhGameEngine, PcLauncher.EpicGamesStore, false, true, SetupWizardStep.Finish)]
+        [InlineData(WizardGameEdition.Pcsx2, PcLauncher.EpicGamesStore, false, true, SetupWizardStep.IsoSelection)]
+        [InlineData(WizardGameEdition.Pc, PcLauncher.EpicGamesStore, false, true, SetupWizardStep.PanaceaInstall)]
+        public void SetupWizardGameEditionRouteIsTypedAndPure(
+            WizardGameEdition edition, PcLauncher launcher, bool hasKh2Iso, bool isWindows, SetupWizardStep expected)
         {
-            var first = new object();
-            var second = new object();
-            var third = new object();
-            var alternate = new object();
-            var service = new WizardPageStackService();
-            var changes = new List<string>();
-            ((INotifyPropertyChanged)service).PropertyChanged += (_, e) => changes.Add(e.PropertyName);
+            var state = new SetupWizardRouteState(edition, launcher, hasKh2Iso, isWindows);
+            Assert.Equal(expected, SetupWizardRouteCalculator.GetNextStep(SetupWizardStep.GameEdition, state));
+        }
 
-            service.OnPageChanged(first);
-            service.OnPageChanged(second);
-            service.OnPageChanged(third);
-            Assert.Same(second, service.Back);
+        [Theory]
+        [InlineData(PcLauncher.Steam, true, SetupWizardStep.SteamApiTrick)]
+        [InlineData(PcLauncher.Steam, false, SetupWizardStep.GameData)]
+        [InlineData(PcLauncher.EpicGamesStore, true, SetupWizardStep.GameData)]
+        [InlineData(PcLauncher.Other, true, SetupWizardStep.GameData)]
+        public void SetupWizardLuaRouteCoversLauncherAndPlatform(
+            PcLauncher launcher, bool isWindows, SetupWizardStep expected)
+        {
+            var state = new SetupWizardRouteState(WizardGameEdition.Pc, launcher, false, isWindows);
+            Assert.Equal(expected, SetupWizardRouteCalculator.GetNextStep(SetupWizardStep.LuaBackendInstall, state));
+        }
 
-            service.OnPageChanged(second);
-            Assert.Same(first, service.Back);
-            service.OnPageChanged(alternate);
+        [Theory]
+        [InlineData(WizardGameEdition.Pcsx2, true, SetupWizardStep.Region)]
+        [InlineData(WizardGameEdition.Pcsx2, false, SetupWizardStep.Finish)]
+        [InlineData(WizardGameEdition.Pc, true, SetupWizardStep.Finish)]
+        [InlineData(WizardGameEdition.OpenKhGameEngine, true, SetupWizardStep.Finish)]
+        public void SetupWizardGameDataRouteCoversEditionAndKh2Iso(
+            WizardGameEdition edition, bool hasKh2Iso, SetupWizardStep expected)
+        {
+            var state = new SetupWizardRouteState(edition, PcLauncher.EpicGamesStore, hasKh2Iso, true);
+            Assert.Equal(expected, SetupWizardRouteCalculator.GetNextStep(SetupWizardStep.GameData, state));
+        }
 
-            Assert.Same(second, service.Back);
-            Assert.All(changes, name => Assert.Equal(nameof(WizardPageStackService.Back), name));
+        [Theory]
+        [InlineData(SetupWizardStep.Intro, SetupWizardStep.GameEdition)]
+        [InlineData(SetupWizardStep.IsoSelection, SetupWizardStep.GameData)]
+        [InlineData(SetupWizardStep.PanaceaInstall, SetupWizardStep.LuaBackendInstall)]
+        [InlineData(SetupWizardStep.SteamApiTrick, SetupWizardStep.GameData)]
+        [InlineData(SetupWizardStep.Region, SetupWizardStep.Finish)]
+        public void SetupWizardFixedRoutesAreComplete(SetupWizardStep current, SetupWizardStep expected)
+        {
+            var state = new SetupWizardRouteState(WizardGameEdition.Pc, PcLauncher.EpicGamesStore, false, true);
+            Assert.Equal(expected, SetupWizardRouteCalculator.GetNextStep(current, state));
+        }
+
+        [Fact]
+        public void SetupWizardFinishHasNoNextStep()
+        {
+            var state = new SetupWizardRouteState(WizardGameEdition.Pc, PcLauncher.EpicGamesStore, false, true);
+            Assert.Null(SetupWizardRouteCalculator.GetNextStep(SetupWizardStep.Finish, state));
         }
 
         [Fact]

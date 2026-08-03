@@ -23,6 +23,55 @@ namespace OpenKh.Tools.ModsManager.Models
         KingdomHearts28 = 1
     }
 
+    public enum SetupWizardStep
+    {
+        Intro,
+        GameEdition,
+        IsoSelection,
+        PanaceaInstall,
+        LuaBackendInstall,
+        SteamApiTrick,
+        GameData,
+        Region,
+        Finish
+    }
+
+    public sealed record SetupWizardRouteState(
+        WizardGameEdition GameEdition,
+        PcLauncher Launcher,
+        bool HasKingdomHearts2Iso,
+        bool IsWindows);
+
+    public static class SetupWizardRouteCalculator
+    {
+        public static SetupWizardStep? GetNextStep(SetupWizardStep current, SetupWizardRouteState state) =>
+            current switch
+            {
+                SetupWizardStep.Intro => SetupWizardStep.GameEdition,
+                SetupWizardStep.GameEdition => state.GameEdition switch
+                {
+                    WizardGameEdition.OpenKhGameEngine => SetupWizardStep.Finish,
+                    WizardGameEdition.Pcsx2 => SetupWizardStep.IsoSelection,
+                    WizardGameEdition.Pc => SetupWizardStep.PanaceaInstall,
+                    _ => null
+                },
+                SetupWizardStep.IsoSelection => SetupWizardStep.GameData,
+                SetupWizardStep.PanaceaInstall => SetupWizardStep.LuaBackendInstall,
+                SetupWizardStep.LuaBackendInstall =>
+                    state.Launcher == PcLauncher.Steam && state.IsWindows
+                        ? SetupWizardStep.SteamApiTrick
+                        : SetupWizardStep.GameData,
+                SetupWizardStep.SteamApiTrick => SetupWizardStep.GameData,
+                SetupWizardStep.GameData =>
+                    state.GameEdition == WizardGameEdition.Pcsx2 && state.HasKingdomHearts2Iso
+                        ? SetupWizardStep.Region
+                        : SetupWizardStep.Finish,
+                SetupWizardStep.Region => SetupWizardStep.Finish,
+                SetupWizardStep.Finish => null,
+                _ => null
+            };
+    }
+
     public enum WizardGameId
     {
         KingdomHearts1,

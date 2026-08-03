@@ -1,8 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenKh.Tools.Common.Avalonia;
+using OpenKh.Tools.ModsManager.Models;
 using OpenKh.Tools.ModsManager.ViewModels;
-using System;
 using System.Collections.Generic;
 
 namespace OpenKh.Tools.ModsManager.Views
@@ -10,116 +10,107 @@ namespace OpenKh.Tools.ModsManager.Views
     /// <summary>
     /// Avalonia port of the setup wizard. The Xceed Wizard control is
     /// replaced by a simple page host: all pages live in a Panel and only the
-    /// current one is visible; Back/Next follow the same ViewModel-driven
-    /// branching (WizardPageAfterIntro etc.) and PageStack history the WPF
-    /// wizard uses, so SetupWizardViewModel is shared unchanged.
+    /// current one is visible. This frontend owns its controls and visited-page
+    /// history while Core supplies only typed, pure route decisions.
     /// </summary>
     public partial class SetupWizardWindow : DialogWindowBase
     {
         private sealed record PageInfo(
             string Title,
             string Description,
-            Func<object> GetNextPage,
-            Func<bool> CanNext,
-            Func<bool> CanBackAndCancel);
+            System.Func<bool> CanNext,
+            System.Func<bool> CanBackAndCancel);
 
         private readonly SetupWizardViewModel _vm;
-        private readonly Dictionary<Control, PageInfo> _pages;
-        private Control _currentPage;
-        private bool _updatingButtons;
+        private readonly Dictionary<SetupWizardStep, Control> _controls;
+        private readonly Dictionary<SetupWizardStep, PageInfo> _pages;
+        private readonly List<SetupWizardStep> _history = new List<SetupWizardStep>();
+        private SetupWizardStep _currentStep;
 
         public SetupWizardWindow()
         {
             InitializeComponent();
             _vm = new SetupWizardViewModel();
-
-            // Assign the page tokens BEFORE setting DataContext: some shared
-            // ViewModel getters (e.g. LaunchOption) assign the WizardPageAfter*
-            // properties from these tokens as a side effect, and Avalonia
-            // evaluates bindings synchronously when DataContext changes — with
-            // the tokens still null, navigation would dead-end.
-            _vm.PageIsoSelection = PageIsoSelection;
-            _vm.PageEosInstall = PageEosInstall;
-            _vm.PageRegion = PageRegion;
-            _vm.PageGameData = PageGameData;
-            _vm.PageSteamAPITrick = PageSteamAPITrick;
-            _vm.LastPage = LastPage;
-
             DataContext = _vm;
 
-            _pages = new Dictionary<Control, PageInfo>
+            _controls = new Dictionary<SetupWizardStep, Control>
             {
-                [PageGameEdition] = new PageInfo(
+                [SetupWizardStep.GameEdition] = PageGameEdition,
+                [SetupWizardStep.IsoSelection] = PageIsoSelection,
+                [SetupWizardStep.PanaceaInstall] = PageEosInstall,
+                [SetupWizardStep.LuaBackendInstall] = PageLuaBackendInstall,
+                [SetupWizardStep.SteamApiTrick] = PageSteamAPITrick,
+                [SetupWizardStep.GameData] = PageGameData,
+                [SetupWizardStep.Region] = PageRegion,
+                [SetupWizardStep.Finish] = LastPage,
+            };
+            _pages = new Dictionary<SetupWizardStep, PageInfo>
+            {
+                [SetupWizardStep.GameEdition] = new PageInfo(
                     "Game edition",
                     "Selected the preferred edition to launch the game",
-                    () => _vm.WizardPageAfterIntro,
                     () => _vm.IsGameSelected,
                     () => true),
-                [PageIsoSelection] = new PageInfo(
+                [SetupWizardStep.IsoSelection] = new PageInfo(
                     "Configure the game you want to mod",
                     "Do not worry, you can change this option later",
-                    () => PageGameData,
                     () => true,
                     () => true),
-                [PageGameData] = new PageInfo(
+                [SetupWizardStep.GameData] = new PageInfo(
                     "Set Game Data Location",
                     "It might be necessary to extract game's data.",
-                    () => _vm.WizardPageAfterGameData,
                     () => _vm.IsGameDataFound,
                     () => _vm.IsNotExtracting),
-                [PageRegion] = new PageInfo(
+                [SetupWizardStep.Region] = new PageInfo(
                     "Set your preferred region",
                     "This will instruct the game to force to load specific languages",
-                    () => LastPage,
                     () => _vm.IsGameDataFound,
                     () => true),
-                [PageEosInstall] = new PageInfo(
+                [SetupWizardStep.PanaceaInstall] = new PageInfo(
                     "Install OpenKH Panacea (Optional and Experimental)",
                     "Install automatic mod loading support into the game's folder.",
-                    () => PageLuaBackendInstall,
                     () => true,
                     () => true),
-                [PageLuaBackendInstall] = new PageInfo(
+                [SetupWizardStep.LuaBackendInstall] = new PageInfo(
                     "Install Lua Backend",
                     "Lua Backend allows you to use Lua Scripts with the PC version of Kingdom Hearts.",
-                    () => _vm.WizardPageAfterLuaBackend,
                     () => true,
                     () => true),
-                [PageSteamAPITrick] = new PageInfo(
+                [SetupWizardStep.SteamApiTrick] = new PageInfo(
                     "Launch Games Directly (Steam)",
                     "Steam allows you to launch the exes directly through a one line text file located in the games install folder.",
-                    () => PageGameData,
                     () => true,
                     () => true),
-                [LastPage] = new PageInfo(
+                [SetupWizardStep.Finish] = new PageInfo(
                     "You're set!",
                     "You successfully configured OpenKH Mods Manager.",
-                    () => null,
                     () => false,
                     () => true),
             };
 
             _vm.PropertyChanged += (_, _) => UpdateButtons();
-            _vm.PageStack.PropertyChanged += (_, _) => UpdateButtons();
-
-            NavigateTo(PageGameEdition);
+            NavigateTo(SetupWizardStep.GameEdition);
 
             Closed += (sender, e) => _vm.SetAborted();
         }
 
-        private void NavigateTo(Control page)
+        private void NavigateTo(SetupWizardStep step)
         {
-            if (page is null)
+            if (!_controls.TryGetValue(step, out var page))
                 return;
 
-            if (_currentPage is not null)
-                _currentPage.IsVisible = false;
-            _currentPage = page;
-            _currentPage.IsVisible = true;
+            if (_history.Count > 0)
+                _controls[_currentStep].IsVisible = false;
+            _currentStep = step;
+            page.IsVisible = true;
 
-            _vm.PageStack.OnPageChanged(page);
+            var found = _history.IndexOf(step);
+            if (found >= 0)
+                _history.RemoveRange(found + 1, _history.Count - found - 1);
+            else
+                _history.Add(step);
 
-            var info = _pages[page];
+            var info = _pages[step];
             HeaderTitle.Text = info.Title;
             HeaderDescription.Text = info.Description;
 
@@ -128,41 +119,30 @@ namespace OpenKh.Tools.ModsManager.Views
 
         private void UpdateButtons()
         {
-            if (_currentPage is null)
+            if (_history.Count == 0)
                 return;
 
-            // Some shared-ViewModel getters (e.g. GameEdition) assign other
-            // properties as a side effect, which raises PropertyChanged and
-            // would re-enter this method endlessly without the guard.
-            if (_updatingButtons)
-                return;
-            _updatingButtons = true;
-            try
-            {
-                var info = _pages[_currentPage];
-                NextButton.IsVisible = !ReferenceEquals(_currentPage, LastPage);
-                NextButton.IsEnabled = info.CanNext() && info.GetNextPage() is not null;
-                BackButton.IsEnabled = info.CanBackAndCancel() && _vm.PageStack.Back is Control;
-                CancelButton.IsEnabled = info.CanBackAndCancel();
-                FinishButton.IsVisible = ReferenceEquals(_currentPage, LastPage);
-            }
-            finally
-            {
-                _updatingButtons = false;
-            }
+            var info = _pages[_currentStep];
+            var next = SetupWizardRouteCalculator.GetNextStep(_currentStep, _vm.RouteState);
+            NextButton.IsVisible = _currentStep != SetupWizardStep.Finish;
+            NextButton.IsEnabled = info.CanNext() && next.HasValue && _controls.ContainsKey(next.Value);
+            BackButton.IsEnabled = info.CanBackAndCancel() && _history.Count > 1;
+            CancelButton.IsEnabled = info.CanBackAndCancel();
+            FinishButton.IsVisible = _currentStep == SetupWizardStep.Finish;
         }
 
         private void Back_Click(object sender, RoutedEventArgs e)
         {
-            if (_vm.PageStack.Back is Control previous)
-                NavigateTo(previous);
+            if (_history.Count > 1)
+                NavigateTo(_history[_history.Count - 2]);
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
         {
-            var info = _pages[_currentPage];
-            if (info.CanNext() && info.GetNextPage() is Control next)
-                NavigateTo(next);
+            var info = _pages[_currentStep];
+            var next = SetupWizardRouteCalculator.GetNextStep(_currentStep, _vm.RouteState);
+            if (info.CanNext() && next.HasValue)
+                NavigateTo(next.Value);
         }
 
         private void Finish_Click(object sender, RoutedEventArgs e)

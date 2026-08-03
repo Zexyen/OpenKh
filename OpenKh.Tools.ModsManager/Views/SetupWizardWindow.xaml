@@ -41,9 +41,7 @@
             PageType="Interior"
             Title="Game edition"
             CanSelectNextPage="{Binding IsGameSelected}"
-            Description="Selected the preferred edition to launch the game"
-            PreviousPage="{Binding PageStack.Back}"
-            NextPage="{Binding WizardPageAfterIntro}">
+            Description="Selected the preferred edition to launch the game">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Margin="0 0 0 3">Game edition</TextBlock>
@@ -132,7 +130,6 @@
             PageType="Interior"
             Title="Configure the game you want to mod"
             Description="Do not worry, you can change this option later"
-            PreviousPage="{Binding PageStack.Back}"
             NextPage="{Binding ElementName=PageGameData}">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -197,8 +194,6 @@
             CanSelectNextPage="{Binding IsGameDataFound}"
             CanSelectPreviousPage="{Binding IsNotExtracting}"
             CanCancel="{Binding IsNotExtracting}"
-            PreviousPage="{Binding PageStack.Back}"
-            NextPage="{Binding WizardPageAfterGameData}"
             IsEnabled="{Binding IsNotExtracting}">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -298,7 +293,6 @@
             Title="Set your preferred region"
             Description="This will instruct the game to force to load specific languages"
             CanSelectNextPage="{Binding IsGameDataFound}"
-            PreviousPage="{Binding PageStack.Back}"
             NextPage="{Binding ElementName=LastPage}">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -331,7 +325,6 @@
             PageType="Interior"
             Title="Install OpenKH Panacea (Optional and Experimental)"
             Description="Install automatic mod loading support into the game's folder."
-            PreviousPage="{Binding PageStack.Back}"
             NextPage="{Binding ElementName=PageLuaBackendInstall}">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -377,9 +370,7 @@
             x:Name="PageLuaBackendInstall"
             PageType="Interior"
             Title="Install Lua Backend"
-            Description="Lua Backend allows you to use Lua Scripts with the PC version of Kingdom Hearts."
-            PreviousPage="{Binding PageStack.Back}"
-            NextPage="{Binding WizardPageAfterLuaBackend}">
+            Description="Lua Backend allows you to use Lua Scripts with the PC version of Kingdom Hearts.">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Margin="0 0 0 3">Game Collection</TextBlock>
@@ -416,7 +407,6 @@
             PageType="Interior"
             Title="Launch Games Directly (Steam)"
             Description="Steam allows you to launch the exes directly through a one line text file located in the games install folder."
-            PreviousPage="{Binding PageStack.Back}"
             NextPage="{Binding ElementName=PageGameData}">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -439,7 +429,6 @@
             PageType="Exterior"
             Title="You're set!"
             Description="You successfully configured OpenKH Mods Manager. Have fun with all the amazing mods that the community has to offer!"
-            PreviousPage="{Binding PageStack.Back}"
             CanFinish="True"/>
     </xctk:Wizard>
 </Window>

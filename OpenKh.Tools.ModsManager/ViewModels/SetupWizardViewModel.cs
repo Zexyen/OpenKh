@@ -1,6 +1,7 @@
 using Octokit;
 using OpenKh.Common;
 using OpenKh.Tools.Common.Wpf;
+using OpenKh.Tools.ModsManager.Models;
 using OpenKh.Tools.ModsManager.Services;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
         public const int PCSX2 = 1;
         public const int PC = 2;
 
-        private int _gameEdition;
+        private int _gameEdition = ConfigurationService.GameEdition;
         private string _isoLocation = null;
         private string _isoLocationKH2 = ConfigurationService.IsoLocationKH2;
         private string _isoLocationKH1 = ConfigurationService.IsoLocationKH1;
@@ -55,50 +56,24 @@ namespace OpenKh.Tools.ModsManager.ViewModels
         private List<string> LuaScriptPaths = new List<string>();
         private bool _overrideGameDataFound = false;
 
-        private object _wizardPageAfterIntro;
-        public object WizardPageAfterIntro
-        {
-            get => _wizardPageAfterIntro;
-            private set
-            {
-                _wizardPageAfterIntro = value;
-                OnPropertyChanged();
-            }
-        }
-        private object _wizardPageAfterGameData;
-        public object WizardPageAfterGameData
-        {
-            get => _wizardPageAfterGameData;
-            private set
-            {
-                _wizardPageAfterGameData = value;
-                OnPropertyChanged();
-            }
-        }
-        private object _wizardPageAfterLuaBackend;
-        public object WizardPageAfterLuaBackend
-        {
-            get => _wizardPageAfterLuaBackend;
-            private set
-            {
-                _wizardPageAfterLuaBackend = value;
-                OnPropertyChanged();
-            }
-        }
-        public object PageIsoSelection { get; internal set; }
-        public object PageEosInstall { get; internal set; }
-        public object PageSteamAPITrick { get; internal set; }
-        public object PageRegion { get; internal set; }
-        public object PageGameData { get; internal set; }
-        public object LastPage { get; internal set; }
-
-        public WizardPageStackService PageStack { get; set; } = new WizardPageStackService();
-
         private const string RAW_FILES_FOLDER_NAME = "raw";
         private const string ORIGINAL_FILES_FOLDER_NAME = "original";
         private const string REMASTERED_FILES_FOLDER_NAME = "remastered";
 
         public string Title => $"Set-up wizard | {ApplicationName}";
+
+        public SetupWizardRouteState RouteState => new SetupWizardRouteState(
+            (WizardGameEdition)_gameEdition,
+            GetPcLauncher(),
+            !string.IsNullOrEmpty(_isoLocationKH2),
+            OperatingSystem.IsWindows());
+
+        private static PcLauncher GetPcLauncher() => ConfigurationService.PCVersion switch
+        {
+            "Steam" => PcLauncher.Steam,
+            "Other" => PcLauncher.Other,
+            _ => PcLauncher.EpicGamesStore
+        };
 
         public RelayCommand SelectIsoCommand { get; }
         public string GameId { get; set; }
@@ -177,7 +152,6 @@ namespace OpenKh.Tools.ModsManager.ViewModels
             set
             {
                 _isoLocationKH2 = value;
-                WizardPageAfterGameData = !string.IsNullOrEmpty(_isoLocationKH2) ? PageRegion : LastPage;
                 ConfigurationService.IsoLocationKH2 = _isoLocationKH2;
 
                 OnPropertyChanged();
@@ -185,7 +159,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                 OnPropertyChanged(nameof(GameDataFoundVisibility));
                 OnPropertyChanged(nameof(GameDataNotFoundVisibility));
                 OnPropertyChanged(nameof(KH2RecognizedVisibility));
-                OnPropertyChanged(nameof(WizardPageAfterGameData));
+                OnPropertyChanged(nameof(RouteState));
             }
         }
         public string IsoLocationKH1
@@ -252,43 +226,15 @@ namespace OpenKh.Tools.ModsManager.ViewModels
         {
             get
             {
-                _gameEdition = ConfigurationService.GameEdition;
-                WizardPageAfterIntro = _gameEdition switch
-                {
-                    OpenKHGameEngine => LastPage,
-                    PCSX2 => PageIsoSelection,
-                    PC => PageEosInstall,
-                    _ => null,
-                };
-                WizardPageAfterGameData = _gameEdition switch
-                {
-                    OpenKHGameEngine => LastPage,
-                    PCSX2 => !string.IsNullOrEmpty(_isoLocationKH2) ? PageRegion : LastPage,
-                    PC => LastPage,
-                    _ => null,
-                };
                 return _gameEdition;
             }
             set
             {
                 _gameEdition = value;
                 ConfigurationService.GameEdition = _gameEdition;
-                WizardPageAfterIntro = _gameEdition switch
-                {
-                    OpenKHGameEngine => LastPage,
-                    PCSX2 => PageIsoSelection,
-                    PC => PageEosInstall,
-                    _ => null,
-                };
-                WizardPageAfterGameData = _gameEdition switch
-                {
-                    OpenKHGameEngine => LastPage,
-                    PCSX2 => !string.IsNullOrEmpty(_isoLocationKH2) ? PageRegion : LastPage,
-                    PC => LastPage,
-                    _ => null,
-                };
 
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(RouteState));
                 OnPropertyChanged(nameof(IsGameSelected));
                 OnPropertyChanged(nameof(OpenKhGameEngineConfigVisibility));
                 OnPropertyChanged(nameof(Pcsx2ConfigVisibility));
@@ -336,13 +282,10 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                         // The steam_appid.txt direct-launch trick is
                         // Windows-only; on Linux the game always starts
                         // through the Steam client, so skip that page.
-                        WizardPageAfterLuaBackend = OperatingSystem.IsWindows() ? PageSteamAPITrick : PageGameData;
                         return 1;
                     case "Other":
-                        WizardPageAfterLuaBackend = PageGameData;
                         return 2;
                     default:
-                        WizardPageAfterLuaBackend = PageGameData;
                         return 0;
                 }
             }
@@ -352,17 +295,16 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                 {
                     case 1:
                         ConfigurationService.PCVersion = "Steam";
-                        WizardPageAfterLuaBackend = OperatingSystem.IsWindows() ? PageSteamAPITrick : PageGameData;
                         break;
                     case 2:
                         ConfigurationService.PCVersion = "Other";
-                        WizardPageAfterLuaBackend = PageGameData;
                         break;
                     default:
                         ConfigurationService.PCVersion = "EGS";
-                        WizardPageAfterLuaBackend = PageGameData;
                         break;
                 }
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(RouteState));
             }
         }
         public RelayCommand SelectOpenKhGameEngineCommand { get; }
