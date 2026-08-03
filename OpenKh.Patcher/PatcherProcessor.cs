@@ -54,9 +54,25 @@ namespace OpenKh.Patcher
             public static string NormalizeSeparators(string path) =>
                 Path.DirectorySeparatorChar == '/' && path != null ? path.Replace('\\', '/') : path;
 
-            public string GetOriginalAssetPath(string path) => Path.Combine(OriginalAssetPath, NormalizeSeparators(path));
-            public string GetSourceModAssetPath(string path) => Path.Combine(SourceModAssetPath, NormalizeSeparators(path));
-            public string GetDestinationPath(string path) => Path.Combine(DestinationPath, NormalizeSeparators(path));
+            private static string GetContainedPath(string rootPath, string path)
+            {
+                var fullRootPath = Path.GetFullPath(rootPath);
+                var fullPath = Path.GetFullPath(Path.Combine(fullRootPath, NormalizeSeparators(path)));
+                var relativePath = Path.GetRelativePath(fullRootPath, fullPath);
+
+                if (Path.IsPathRooted(relativePath) ||
+                    relativePath == ".." ||
+                    relativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Path '{path}' resolves outside '{rootPath}'.");
+                }
+
+                return fullPath;
+            }
+
+            public string GetOriginalAssetPath(string path) => GetContainedPath(OriginalAssetPath, path);
+            public string GetSourceModAssetPath(string path) => GetContainedPath(SourceModAssetPath, path);
+            public string GetDestinationPath(string path) => GetContainedPath(DestinationPath, path);
             public void EnsureDirectoryExists(string fileName) => Directory.CreateDirectory(Path.GetDirectoryName(fileName));
             public void CopyOriginalFile(string fileName, string dstFile)
             {
@@ -831,7 +847,7 @@ namespace OpenKh.Patcher
 
                         levelList.Write(stream.SetPosition(0));
                         break;
-                        
+
                     case "went":
                     {
                         var went = Kh2.SystemData.Went.Read(stream);
@@ -932,7 +948,7 @@ namespace OpenKh.Patcher
                         file.Write(stream);
                         break;
                     }
-                        
+
                     case "bons":
                         var bonusRaw = Kh2.Battle.Bons.Read(stream);
                         var bonusList = new Dictionary<byte, Dictionary<string, Kh2.Battle.Bons>>();
@@ -1080,7 +1096,7 @@ namespace OpenKh.Patcher
 
                         Kh2.Slct.Write(stream.SetPosition(0), slctList);
                         break;
-                        
+
                     case "localset":
                         var localList = Kh2.Localset.Read(stream);
                         var moddedLocal = deserializer.Deserialize<List<Kh2.Localset>>(sourceText);

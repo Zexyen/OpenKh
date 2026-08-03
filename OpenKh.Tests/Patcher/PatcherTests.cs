@@ -39,6 +39,40 @@ namespace OpenKh.Tests.Patcher
                 Directory.Delete(ModOutputDir, true);
         }
 
+        [Theory]
+        [InlineData("../outside.bin")]
+        [InlineData("..\\outside.bin")]
+        [InlineData("nested/../../outside.bin")]
+        [InlineData("nested\\..\\..\\outside.bin")]
+        public void ContextRejectsPathsOutsideConfiguredRoots(string path)
+        {
+            var context = new PatcherProcessor.Context(
+                new Metadata(),
+                AssetsInputDir,
+                ModInputDir,
+                ModOutputDir);
+
+            Assert.Throws<InvalidOperationException>(() => context.GetOriginalAssetPath(path));
+            Assert.Throws<InvalidOperationException>(() => context.GetSourceModAssetPath(path));
+            Assert.Throws<InvalidOperationException>(() => context.GetDestinationPath(path));
+        }
+
+        [Theory]
+        [InlineData("nested/file.bin")]
+        [InlineData("nested\\file.bin")]
+        public void ContextAllowsPathsInsideConfiguredRoots(string path)
+        {
+            var context = new PatcherProcessor.Context(
+                new Metadata(),
+                AssetsInputDir,
+                ModInputDir,
+                ModOutputDir);
+
+            Assert.Equal(
+                Path.GetFullPath(Path.Combine(ModOutputDir, "nested", "file.bin")),
+                context.GetDestinationPath(path));
+        }
+
         [Fact]
         public void Kh2CopyBinariesTest()
         {

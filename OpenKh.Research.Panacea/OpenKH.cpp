@@ -285,10 +285,10 @@ void OpenKH::Initialize()
         m_DevPath.append(gamefolders[(int)m_GameID]);
     if (m_ExtractPath.size() > 0)
         m_ExtractPath.append(gamefolders[(int)m_GameID]);
-    
+
     Hook();
     Panacea::Initialize();
-    
+
     fprintf(stdout, "Welcome to OpenKH Panacea!\n");
 }
 

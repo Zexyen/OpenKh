@@ -31,7 +31,7 @@ jobs:
     - name: build.ps1
       run: powershell -ExecutionPolicy Unrestricted ./build.ps1
       shell: pwsh
-      
+
     - name: setup-msbuild
       uses: microsoft/setup-msbuild@v1.1.3
     - name: msbuild panacea
@@ -39,14 +39,14 @@ jobs:
         msbuild OpenKh.Research.Panacea\OpenKh.Research.Panacea.vcxproj /p:Configuration=Release /p:Platform=x64
         xcopy "OpenKh.Research.Panacea\Release\*.dll" bin\
         xcopy "OpenKh.Research.Panacea\Dependencies\*.dll" bin\
-    
+
     - name: create openkh-release
       shell: bash
       env:
         RELEASE_TAG: "release2-${{github.run_number}}"
       run: |
         echo $RELEASE_TAG > bin/openkh-release
-    
+
     - name: bin → openkh
       run: ren bin openkh
       shell: pwsh

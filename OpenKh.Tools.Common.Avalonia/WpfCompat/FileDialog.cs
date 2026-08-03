@@ -43,7 +43,7 @@ namespace Xe.Tools.Wpf.Dialogs
         public static FileDialogFilter ByExtensions(string name, params string[] extensions) => ByExtensions(name, extensions.AsEnumerable());
         public static FileDialogFilter ByExtensions(string name, IEnumerable<string> extensions) =>
             ByPatterns(name, extensions.Select(x => $"*.{x}"));
-        public static FileDialogFilter ByPatterns(string name, params string[] patterns) => ByExtensions(name, patterns.AsEnumerable());
+        public static FileDialogFilter ByPatterns(string name, params string[] patterns) => ByPatterns(name, patterns.AsEnumerable());
         public static FileDialogFilter ByPatterns(string name, IEnumerable<string> patterns) => new FileDialogFilter(name, patterns);
     }
 
