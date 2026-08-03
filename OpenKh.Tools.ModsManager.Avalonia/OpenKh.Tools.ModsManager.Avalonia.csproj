@@ -20,11 +20,13 @@
        during the transition): everything except the WPF UI layer (Views,
        UserControls, Styles, Converters, App), the WPF-era settings designer
        and the services that create WPF windows directly, which have Avalonia
-       counterparts in this project. -->
+       counterparts in this project. Framework-neutral sources already moved
+       to Core are consumed through its project reference, not source links. -->
   <ItemGroup>
-    <Compile Include="..\OpenKh.Tools.ModsManager\ViewModels\**\*.cs" LinkBase="Shared\ViewModels" />
+    <Compile Include="..\OpenKh.Tools.ModsManager\ViewModels\**\*.cs" LinkBase="Shared\ViewModels"
+             Exclude="..\OpenKh.Tools.ModsManager\ViewModels\DownloadableModViewModel.cs;..\OpenKh.Tools.ModsManager\ViewModels\ModViewModel.cs" />
     <Compile Include="..\OpenKh.Tools.ModsManager\Services\**\*.cs" LinkBase="Shared\Services"
-             Exclude="..\OpenKh.Tools.ModsManager\Services\SettingBinding.cs;..\OpenKh.Tools.ModsManager\Services\GetActiveWindowService.cs;..\OpenKh.Tools.ModsManager\Services\**\*.Wpf.cs" />
+             Exclude="..\OpenKh.Tools.ModsManager\Services\SettingBinding.cs;..\OpenKh.Tools.ModsManager\Services\GetActiveWindowService.cs;..\OpenKh.Tools.ModsManager\Services\ProgressWindowService.cs;..\OpenKh.Tools.ModsManager\Services\**\*Wpf*.cs" />
     <Compile Include="..\OpenKh.Tools.ModsManager\Models\**\*.cs" LinkBase="Shared\Models" />
     <Compile Include="..\OpenKh.Tools.ModsManager\Exceptions\**\*.cs" LinkBase="Shared\Exceptions" />
     <Compile Include="..\OpenKh.Tools.ModsManager\ExtensionMethods\**\*.cs" LinkBase="Shared\ExtensionMethods" />
@@ -58,6 +60,7 @@
     <ProjectReference Include="..\OpenKh.Recom\OpenKh.Recom.csproj" />
     <ProjectReference Include="..\OpenKh.Tools.Common\OpenKh.Tools.Common.csproj" />
     <ProjectReference Include="..\OpenKh.Tools.Common.Avalonia\OpenKh.Tools.Common.Avalonia.csproj" />
+    <ProjectReference Include="..\OpenKh.Tools.ModsManager.Core\OpenKh.Tools.ModsManager.Core.csproj" />
     <ProjectReference Include="..\XeEngine.Tools.Public\Xe.Tools\Xe.Tools.csproj" />
   </ItemGroup>
 

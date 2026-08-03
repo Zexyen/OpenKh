@@ -1,0 +1,17 @@
+using OpenKh.Tools.ModsManager.Interfaces;
+
+namespace OpenKh.Tools.ModsManager.Services
+{
+    public sealed record AvaloniaPlatformServices(IUiDispatcher Dispatcher, IMessageDialogService Messages,
+        IFilePickerService Files, IClipboardService Clipboard, IBrowserService Browser,
+        IApplicationLifetime Lifetime, IProgressDialogService Progress, IDebugLogService DebugLog,
+        IShellProcessLauncher Processes, INavigationService Navigation, IImageService Images);
+
+    public static class AvaloniaPlatformComposition
+    {
+        public static AvaloniaPlatformServices Create() => new(new AvaloniaUiDispatcher(), new AvaloniaMessageDialogService(),
+            new AvaloniaFilePickerService(), new AvaloniaClipboardService(), new AvaloniaBrowserService(),
+            new AvaloniaApplicationLifetime(), new AvaloniaProgressDialogService(), new AvaloniaDebugLogService(),
+            new AvaloniaShellProcessLauncher(), new AvaloniaNavigationService(), new FileImageService());
+    }
+}

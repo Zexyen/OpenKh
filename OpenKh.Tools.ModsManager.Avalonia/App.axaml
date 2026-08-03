@@ -1,11 +1,13 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="using:OpenKh.Tools.Common.Avalonia.Converters"
+             xmlns:commonConverters="using:OpenKh.Tools.Common.Avalonia.Converters"
+             xmlns:converters="using:OpenKh.Tools.ModsManager.Converters"
              x:Class="OpenKh.Tools.ModsManager.App"
              RequestedThemeVariant="Default">
 
     <Application.Resources>
-        <converters:VisibilityToBoolConverter x:Key="VisibilityToBool" />
+        <commonConverters:VisibilityToBoolConverter x:Key="VisibilityToBool" />
+        <converters:ImageDataToImageConverter x:Key="ImageDataToImageConverter" />
     </Application.Resources>
 
     <Application.Styles>

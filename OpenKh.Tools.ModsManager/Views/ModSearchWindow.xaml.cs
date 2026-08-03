@@ -30,6 +30,7 @@ namespace OpenKh.Tools.ModsManager.Views
         private readonly Action _reloadModsList;
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
         private readonly DownloadableModsService _downloadableModsService = DownloadableModsService.Default;
+        private readonly WpfPlatformServices _platform = WpfPlatformComposition.Create();
         private readonly Subject<DownloadableModViewModel> _onModInstalled = new Subject<DownloadableModViewModel>();
         private readonly ObservableCollection<string> _messages = new ObservableCollection<string>();
         private readonly Subject<string> _emitMessage = new Subject<string>();
@@ -189,7 +190,7 @@ namespace OpenKh.Tools.ModsManager.Views
                 .Subscribe(
                     mod =>
                     {
-                        var modVm = new DownloadableModViewModel(mod);
+                        var modVm = new DownloadableModViewModel(mod, _platform.Progress, _platform.Messages, _platform.Dispatcher);
                         modVm.ModInstalled += OnModInstalled;
                         AddOrUpdateMod(modVm);
                     }

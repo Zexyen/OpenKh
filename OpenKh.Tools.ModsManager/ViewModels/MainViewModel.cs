@@ -19,11 +19,6 @@ using static OpenKh.Tools.ModsManager.Helpers;
 
 namespace OpenKh.Tools.ModsManager.ViewModels
 {
-    public interface IChangeModEnableState
-    {
-        void ModEnableStateChanged();
-    }
-
     public class MainViewModel : BaseNotifyPropertyChanged, IChangeModEnableState
     {
         public ColorThemeService ColorTheme => ColorThemeService.Instance;
@@ -77,7 +72,6 @@ namespace OpenKh.Tools.ModsManager.ViewModels
         private const string ORIGINAL_FILES_FOLDER_NAME = "original";
         private const string REMASTERED_FILES_FOLDER_NAME = "remastered";
 
-        public static bool overwriteMod = false;
         public string Title => ApplicationName;
         public string CurrentVersion => ApplicationVersion;
         public ObservableCollection<ModViewModel> ModsList { get; set; }
@@ -505,7 +499,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                             progressWindow.Show();
                             return progressWindow;
                         });
-                        await ModsService.InstallMod(name, isZipFile, isLuaFile, progress =>
+                        var installResult = await ModsService.InstallMod(name, isZipFile, isLuaFile, progress =>
                         {
                             Application.Current.Dispatcher.Invoke(() => progressWindow.ProgressText = progress);
                         }, nProgress =>
@@ -524,12 +518,11 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             progressWindow.Close();
-                            if (overwriteMod)
+                            if (installResult.OverwroteExistingMod)
                             {
                                 var modRemove = ModsList.FirstOrDefault(smod => smod.Title == mod.Metadata.Title);
                                 if (modRemove != null)
                                     ModsList.RemoveAt(ModsList.IndexOf(modRemove));
-                                overwriteMod = false;
                             }
                             ModsList.Insert(0, Map(mod));
                             SelectedValue = ModsList[0];
@@ -1177,7 +1170,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
             OnPropertyChanged(nameof(ModViewModel.CollectionModsList));
         }
 
-        private ModViewModel Map(ModModel mod) => new (mod, this);
+        private ModViewModel Map(ModModel mod) => ModViewModelFactory.Create(mod, this);
 
         public void ModEnableStateChanged()
         {

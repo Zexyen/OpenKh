@@ -56,7 +56,7 @@
 						<CheckBox Grid.Column="0" VerticalAlignment="Center" VerticalContentAlignment="Center" IsChecked="{Binding Enabled}" Foreground="{Binding ColorTheme.TextColor}">
 							<CheckBox.Content>
 								<Grid Margin="3 1 10 0">
-									<Image Width="64" Height="64" Source="{Binding IconImage}"/>
+									<Image Width="64" Height="64" Source="{Binding IconImage, Converter={StaticResource ImageDataToImageConverter}}"/>
 								</Grid>
 							</CheckBox.Content>
 						</CheckBox>
@@ -69,7 +69,7 @@
 			</ListBox.ItemTemplate>
 		</ListBox>
 		<Grid Grid.Column="1">
-			<StackPanel Visibility="{Binding IsModUnselectedMessageVisible}">
+			<StackPanel Visibility="{Binding IsModUnselectedMessageVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
 				<TextBlock Margin="3 0 0 3" Text="The selected mod info will be displayed here." TextWrapping="Wrap"/>
 				<TextBlock Margin="3 0 0 3" TextWrapping="Wrap" Text="&#x0a;To have a mod included in patching tick the box next to it.&#x0a;"></TextBlock>
 				<TextBlock Margin="3 0 0 3" TextWrapping="Wrap">

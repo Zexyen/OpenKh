@@ -14,13 +14,13 @@
     </UserControl.Resources>
     <StackPanel>
         <TextBlock Margin="0 0 0 3" FontWeight="Bold" Text="{Binding Title}" d:Text="Mod title"/>
-        <StackPanel Visibility="{Binding SourceVisibility}">
+        <StackPanel Visibility="{Binding SourceVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock Margin="0 0 0 3">
                 <Hyperlink NavigateUri="{Binding AuthorUrl}" TextDecorations="{x:Null}" RequestNavigate="Hyperlink_RequestNavigate">
                     <TextBlock Text="{Binding Author}" Foreground="{DynamicResource textHyperlink}" d:Text="Author name"/>
                 </Hyperlink>
             </TextBlock>
-            <StackPanel Visibility="{Binding UpdateVisibility}">
+            <StackPanel Visibility="{Binding UpdateVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <TextBlock Margin="0 0 0 3">
                 <Run>The mod is </Run>
                 <Run Text="{Binding UpdateCount}"/>
@@ -29,9 +29,9 @@
                 <Button Margin="0 0 0 3" Content="Download updates" Command="{Binding UpdateCommand}"/>
             </StackPanel>
         </StackPanel>
-        <Image MaxWidth="256" MaxHeight="144" Margin="0 3 0 3" Source="{Binding PreviewImage}" Visibility="{Binding PreviewImageVisibility}"/>
+        <Image MaxWidth="256" MaxHeight="144" Margin="0 3 0 3" Source="{Binding PreviewImage, Converter={StaticResource ImageDataToImageConverter}}" Visibility="{Binding PreviewImageVisibility, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" Text="{Binding Description}"/>
-        <StackPanel Visibility="{Binding SourceVisibility}">
+        <StackPanel Visibility="{Binding SourceVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <TextBlock Margin="0 0 0 3">
                 <Hyperlink NavigateUri="{Binding SourceUrl}" TextDecorations="{x:Null}" RequestNavigate="Hyperlink_RequestNavigate">
                     <TextBlock Text="Mod source code" Foreground="{DynamicResource textHyperlink}"/>
@@ -43,7 +43,7 @@
                 </Hyperlink>
             </TextBlock>
         </StackPanel>
-        <StackPanel Visibility="{Binding LocalVisibility}">
+        <StackPanel Visibility="{Binding LocalVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" FontStyle="Italic">
                 This mod is available only locally and it is not linked to any GitHub repository.
             </TextBlock>
@@ -53,7 +53,7 @@
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <StackPanel Visibility="{Binding CollectionSettingsVisibility}">
+            <StackPanel Visibility="{Binding CollectionSettingsVisibility, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Button Margin="0 0 0 3"
                         Command="{Binding CollectionSettingsCommand}"
                         ToolTip="Control which optional mod files are patched for this collection.">

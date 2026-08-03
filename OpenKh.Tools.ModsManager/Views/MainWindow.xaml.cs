@@ -1,3 +1,4 @@
+using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.ViewModels;
 using System;
 using System.Windows;
@@ -12,6 +13,10 @@ namespace OpenKh.Tools.ModsManager.Views
         public MainWindow()
         {
             InitializeComponent();
+            ModsService.Initialize(new WpfMessageDialogService());
+            var platform = WpfPlatformComposition.Create();
+            ModViewModelFactory.Configure((model, changeState) => new ModViewModel(model, changeState,
+                platform.Progress, platform.Messages, platform.Dispatcher, platform.Navigation, platform.Images));
             DataContext = new MainViewModel();
         }
 

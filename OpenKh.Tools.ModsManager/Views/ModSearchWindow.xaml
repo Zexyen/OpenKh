@@ -119,7 +119,7 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <!-- Mod icon -->
-                                                <Image Grid.Column="0" Width="64" Height="64" Source="{Binding IconImage}" 
+                                                <Image Grid.Column="0" Width="64" Height="64" Source="{Binding IconImage, Converter={StaticResource ImageDataToImageConverter}}"
                                                        RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0"/>
 
                                                 <!-- Mod info -->
@@ -173,7 +173,7 @@
                             <StackPanel>
                                 <!-- Preview image -->
                                 <Border Height="150" Margin="0,0,0,10" Background="#11FFFFFF" BorderBrush="#22FFFFFF" BorderThickness="1">
-                                    <Image Source="{Binding SelectedMod.ScreenshotImage}" Stretch="Uniform" 
+                                    <Image Source="{Binding SelectedMod.ScreenshotImage, Converter={StaticResource ImageDataToImageConverter}}" Stretch="Uniform"
                                            RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border>
 

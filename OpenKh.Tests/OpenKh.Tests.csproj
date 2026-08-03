@@ -32,6 +32,7 @@
     <ProjectReference Include="..\OpenKh.Ps2\OpenKh.Ps2.csproj" />
     <ProjectReference Include="..\OpenKh.DeeperTree\OpenKh.DeeperTree.csproj" />
     <ProjectReference Include="..\OpenKh.Tools.Common.Avalonia\OpenKh.Tools.Common.Avalonia.csproj" />
+    <ProjectReference Include="..\OpenKh.Tools.ModsManager.Core\OpenKh.Tools.ModsManager.Core.csproj" />
     <ProjectReference Include="..\XeEngine.Tools.Public\Xe\Xe.csproj" />
     <ProjectReference Include="..\OpenKh.Command.MapGen\OpenKh.Command.MapGen.csproj" />
     <ProjectReference Include="..\OpenKh.Command.DoctChanger\OpenKh.Command.DoctChanger.csproj" />

@@ -27,7 +27,8 @@ namespace OpenKh.Tools.ModsManager.Views
         private readonly YamlGeneratorService _yamlGeneratorService = new YamlGeneratorService();
         private readonly GetDiffToolsService _getDiffToolsService = new GetDiffToolsService();
         private readonly GetActiveWindowService _getActiveWindowService = new GetActiveWindowService();
-        private readonly QueryApplyPatchService _queryApplyPatchService = new QueryApplyPatchService();
+        private readonly QueryApplyPatchService _queryApplyPatchService =
+            new QueryApplyPatchService(new AvaloniaMessageDialogService());
         private readonly KeywordsMatcherService _keywordsMatcherService = new KeywordsMatcherService();
         private readonly ISerializer _listSer = new SerializerBuilder()
             .Build();

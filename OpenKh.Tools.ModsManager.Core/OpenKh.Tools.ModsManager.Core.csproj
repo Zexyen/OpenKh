@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>OpenKh.Tools.ModsManager</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Octokit" Version="14.0.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenKh.Common\OpenKh.Common.csproj" />
+    <ProjectReference Include="..\OpenKh.Egs\OpenKh.Egs.csproj" />
+    <ProjectReference Include="..\OpenKh.Kh1\OpenKh.Kh1.csproj" />
+    <ProjectReference Include="..\OpenKh.Kh2\OpenKh.Kh2.csproj" />
+    <ProjectReference Include="..\OpenKh.Patcher\OpenKh.Patcher.csproj" />
+    <ProjectReference Include="..\OpenKh.Recom\OpenKh.Recom.csproj" />
+    <ProjectReference Include="..\OpenKh.Tools.Common\OpenKh.Tools.Common.csproj" />
+  </ItemGroup>
+
+</Project>

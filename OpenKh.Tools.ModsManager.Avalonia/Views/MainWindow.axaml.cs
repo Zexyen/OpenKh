@@ -11,6 +11,10 @@ namespace OpenKh.Tools.ModsManager.Views
         public MainWindow()
         {
             InitializeComponent();
+            ModsService.Initialize(new AvaloniaMessageDialogService());
+            var platform = AvaloniaPlatformComposition.Create();
+            ModViewModelFactory.Configure((model, changeState) => new ModViewModel(model, changeState,
+                platform.Progress, platform.Messages, platform.Dispatcher, platform.Navigation, platform.Images));
             DataContext = new MainViewModel();
 
             RestoreWindowPlacement();
