@@ -54,7 +54,7 @@ namespace OpenKh.Tools.ModsManager.Services
     }
     public sealed class AvaloniaBrowserService : IBrowserService
     { public Task OpenAsync(Uri uri, CancellationToken cancellationToken = default) { cancellationToken.ThrowIfCancellationRequested(); Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); return Task.CompletedTask; } }
-    public sealed class AvaloniaApplicationLifetime : IApplicationLifetime
+    public sealed class AvaloniaApplicationLifetime : OpenKh.Tools.ModsManager.Interfaces.IApplicationLifetime
     { public void Shutdown(int exitCode = 0) => (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown(exitCode); }
     public sealed class AvaloniaShellProcessLauncher : IShellProcessLauncher
     {

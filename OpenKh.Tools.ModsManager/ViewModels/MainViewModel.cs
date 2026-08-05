@@ -1,5 +1,6 @@
 using OpenKh.Common;
 using OpenKh.Tools.Common.Wpf;
+using OpenKh.Tools.ModsManager.Interfaces;
 using OpenKh.Tools.ModsManager.Models;
 using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.Views;
@@ -26,6 +27,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
         private static string ApplicationName = Utilities.GetApplicationName();
         private static string ApplicationVersion = Utilities.GetApplicationVersion();
         private GetActiveWindowService _getActiveWindowService = new GetActiveWindowService();
+        private readonly IProgressDialogService _progressDialogService;
 
         private DebuggingWindow _debuggingWindow = new DebuggingWindow();
         private ModViewModel _selectedValue;
@@ -361,8 +363,10 @@ namespace OpenKh.Tools.ModsManager.ViewModels
 
         public bool IsRunning => _runningProcess != null;
 
-        public MainViewModel()
+        public MainViewModel(IProgressDialogService progressDialogService)
         {
+            _progressDialogService = progressDialogService ?? throw new ArgumentNullException(nameof(progressDialogService));
+
             if (ConfigurationService.GameEdition == SetupWizardViewModel.PC)
             {
                 PC = true;
@@ -1511,17 +1515,18 @@ namespace OpenKh.Tools.ModsManager.ViewModels
 
         private async Task UpdateOpenkhAsync()
         {
-            var progressWindowService = new ProgressWindowService();
-
-            var checkResult = await progressWindowService.ShowAsync(
-                async monitor =>
+            OpenkhUpdateCheckerService.CheckResult checkResult = null;
+            var checkProgressResult = await _progressDialogService.RunAsync(
+                new ProgressDialogRequest("OpenKh", "Checking update from github.com"),
+                async (_, cancellation) =>
                 {
-                    monitor.SetTitle("Checking update from github.com");
-                    var result = await new OpenkhUpdateCheckerService().CheckAsync(monitor.Cancellation);
-                    monitor.Cancellation.ThrowIfCancellationRequested();
-                    return result;
+                    checkResult = await new OpenkhUpdateCheckerService().CheckAsync(cancellation);
+                    cancellation.ThrowIfCancellationRequested();
                 }
             );
+            if (checkProgressResult.IsCancelled)
+                return;
+
             if (checkResult.HasUpdate)
             {
                 if (!PlatformCapabilities.SupportsSelfUpdate)
@@ -1548,18 +1553,22 @@ namespace OpenKh.Tools.ModsManager.ViewModels
 
                 if (MessageBox.Show(message, "OpenKh", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
-                    await progressWindowService.ShowAsync(
-                        async monitor =>
+                    var updateProgressResult = await _progressDialogService.RunAsync(
+                        new ProgressDialogRequest("OpenKh", "Updating"),
+                        async (progress, cancellation) =>
                         {
-                            monitor.SetTitle("Updating");
-
                             await new OpenkhUpdateProceederService().UpdateAsync(
                                 checkResult.DownloadZipUrl,
-                                rate => monitor.SetProgress(rate),
-                                monitor.Cancellation
+                                rate => progress.Report(new ProgressDialogUpdate(
+                                    Value: rate,
+                                    IsIndeterminate: false)),
+                                cancellation
                             );
                         }
                     );
+                    if (updateProgressResult.IsCancelled)
+                        return;
+
                     ConfigurationService.Updated = true;
                     // quit app
                     _getActiveWindowService.GetActiveWindow()?.Close();

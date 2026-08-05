@@ -181,6 +181,16 @@ namespace OpenKh.Tools.ModsManager.ViewModels
             }
         }
 
+        public bool IsOpeningCollectionSettings
+        {
+            get => _isOpeningCollectionSettings;
+            private set
+            {
+                if (SetProperty(ref _isOpeningCollectionSettings, value))
+                    _collectionSettingsCommand?.RaiseCanExecuteChanged();
+            }
+        }
+
         private async Task UpdateAsync()
         {
             IsUpdating = true;
@@ -211,8 +221,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
 
         private async Task OpenCollectionSettingsAsync()
         {
-            _isOpeningCollectionSettings = true;
-            _collectionSettingsCommand.RaiseCanExecuteChanged();
+            IsOpeningCollectionSettings = true;
             try
             {
                 await _navigation.ShowAsync(new NavigationRequest(NavigationDestination.CollectionSettings,
@@ -223,8 +232,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
             }
             finally
             {
-                _isOpeningCollectionSettings = false;
-                _collectionSettingsCommand.RaiseCanExecuteChanged();
+                IsOpeningCollectionSettings = false;
             }
         }
 

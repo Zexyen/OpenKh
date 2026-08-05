@@ -17,7 +17,7 @@ namespace OpenKh.Tools.ModsManager.Views
             var platform = WpfPlatformComposition.Create();
             ModViewModelFactory.Configure((model, changeState) => new ModViewModel(model, changeState,
                 platform.Progress, platform.Messages, platform.Dispatcher, platform.Navigation, platform.Images));
-            DataContext = new MainViewModel();
+            DataContext = new MainViewModel(platform.Progress);
         }
 
         protected override void OnClosed(EventArgs e)

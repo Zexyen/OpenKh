@@ -98,6 +98,30 @@ namespace OpenKh.Tests.ModsManager
             Assert.Same(viewModel, Assert.IsType<CollectionSettingsParameter>(navigation.Request.Parameter).Context);
         }
 
+        [Fact]
+        public async Task CollectionSettingsCommand_PreventsReentrancyAndRestoresState()
+        {
+            var navigation = new FakeNavigation { WaitForClose = true };
+            var viewModel = CreateViewModel(CreateModel("owner/collection", true), navigation: navigation,
+                collectionMods: _ => Array.Empty<CollectionModModel>());
+            var command = Assert.IsType<AsyncCommand>(viewModel.CollectionSettingsCommand);
+            var notifications = new List<string>();
+            viewModel.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+
+            var first = command.ExecuteAsync();
+            await navigation.Started.Task;
+            Assert.True(viewModel.IsOpeningCollectionSettings);
+            Assert.False(command.CanExecute(null));
+            await command.ExecuteAsync();
+            Assert.Equal(1, navigation.CallCount);
+
+            navigation.Finish.SetResult(true);
+            await first;
+            Assert.False(viewModel.IsOpeningCollectionSettings);
+            Assert.True(command.CanExecute(null));
+            Assert.Equal(2, notifications.FindAll(x => x == nameof(ModViewModel.IsOpeningCollectionSettings)).Count);
+        }
+
         private static ModModel CreateModel(string name, bool isCollection) => new()
         {
             Name = name,
@@ -137,8 +161,19 @@ namespace OpenKh.Tests.ModsManager
         private sealed class FakeNavigation : INavigationService
         {
             public NavigationRequest Request { get; private set; }
-            public Task<NavigationResult> ShowAsync(NavigationRequest request, CancellationToken cancellationToken = default)
-            { Request = request; return Task.FromResult<NavigationResult>(new CollectionSettingsResult(false)); }
+            public bool WaitForClose { get; set; }
+            public int CallCount { get; private set; }
+            public TaskCompletionSource<bool> Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            public TaskCompletionSource<bool> Finish { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            public async Task<NavigationResult> ShowAsync(NavigationRequest request, CancellationToken cancellationToken = default)
+            {
+                Request = request;
+                CallCount++;
+                Started.TrySetResult(true);
+                if (WaitForClose)
+                    await Finish.Task;
+                return new CollectionSettingsResult(false);
+            }
             public Task<bool> CloseAsync(NavigationDestination destination, NavigationResult result = null, CancellationToken cancellationToken = default) => Task.FromResult(true);
         }
 
