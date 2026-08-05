@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenKh.Tools.Common.Avalonia;
 using OpenKh.Tools.ModsManager.Models;
+using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.ViewModels;
 using System.Collections.Generic;
 
@@ -27,10 +28,14 @@ namespace OpenKh.Tools.ModsManager.Views
         private readonly List<SetupWizardStep> _history = new List<SetupWizardStep>();
         private SetupWizardStep _currentStep;
 
-        public SetupWizardWindow()
+        public SetupWizardWindow() : this(AvaloniaPlatformComposition.CreateSetupWizardViewModel())
+        {
+        }
+
+        public SetupWizardWindow(SetupWizardViewModel viewModel)
         {
             InitializeComponent();
-            _vm = new SetupWizardViewModel();
+            _vm = viewModel;
             DataContext = _vm;
 
             _controls = new Dictionary<SetupWizardStep, Control>
@@ -91,7 +96,8 @@ namespace OpenKh.Tools.ModsManager.Views
             _vm.PropertyChanged += (_, _) => UpdateButtons();
             NavigateTo(SetupWizardStep.GameEdition);
 
-            Closed += (sender, e) => _vm.SetAborted();
+            Closed += (sender, e) => _vm.Dispose();
+            _ = _vm.InitializeAsync();
         }
 
         private void NavigateTo(SetupWizardStep step)

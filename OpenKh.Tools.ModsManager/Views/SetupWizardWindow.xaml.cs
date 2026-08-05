@@ -1,5 +1,6 @@
 using OpenKh.Common;
 using OpenKh.Tools.ModsManager.Models;
+using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.ViewModels;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,10 +20,14 @@ namespace OpenKh.Tools.ModsManager.Views
         private readonly Dictionary<WizardPage, SetupWizardStep> _steps;
         private readonly List<SetupWizardStep> _history = new List<SetupWizardStep>();
 
-        public SetupWizardWindow()
+        public SetupWizardWindow() : this(WpfPlatformComposition.CreateSetupWizardViewModel())
+        {
+        }
+
+        public SetupWizardWindow(SetupWizardViewModel viewModel)
         {
             InitializeComponent();
-            DataContext = _vm = new SetupWizardViewModel();
+            DataContext = _vm = viewModel;
 
             _pages = new Dictionary<SetupWizardStep, WizardPage>
             {
@@ -44,7 +49,8 @@ namespace OpenKh.Tools.ModsManager.Views
             RecordPage(_steps[wizard.CurrentPage]);
             ApplyRoutes();
 
-            Closed += (sender, e) => _vm.SetAborted();
+            Closed += (sender, e) => _vm.Dispose();
+            _ = _vm.InitializeAsync();
         }
 
         private void Wizard_Finish(object sender, Xceed.Wpf.Toolkit.Core.CancelRoutedEventArgs e)

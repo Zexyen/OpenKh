@@ -1,4 +1,5 @@
 using OpenKh.Tools.ModsManager.Interfaces;
+using OpenKh.Tools.ModsManager.ViewModels;
 
 namespace OpenKh.Tools.ModsManager.Services
 {
@@ -13,5 +14,12 @@ namespace OpenKh.Tools.ModsManager.Services
             new AvaloniaFilePickerService(), new AvaloniaClipboardService(), new AvaloniaBrowserService(),
             new AvaloniaApplicationLifetime(), new AvaloniaProgressDialogService(), new AvaloniaDebugLogService(),
             new AvaloniaShellProcessLauncher(), new AvaloniaNavigationService(), new FileImageService());
+
+        public static SetupWizardViewModel CreateSetupWizardViewModel()
+        {
+            var platform = Create();
+            return new SetupWizardViewModel(new SetupWizardDependencies(platform.Dispatcher, platform.Messages, platform.Files,
+                new GameInstallDiscoveryService(), new SetupWizardModLoaderService(), new GameDataExtractionService()));
+        }
     }
 }

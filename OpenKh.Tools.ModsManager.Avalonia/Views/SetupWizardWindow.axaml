@@ -37,11 +37,11 @@
                 <StackPanel>
                     <TextBlock Margin="0 0 0 3">Game edition</TextBlock>
                     <ComboBox Margin="0 0 0 6" SelectedIndex="{Binding GameEdition}" HorizontalAlignment="Stretch">
-                        <ComboBoxItem IsVisible="{Binding $parent[Window].DataContext.OpenKhGameEngineVisible, Converter={StaticResource VisibilityToBool}}">OpenKH Game Engine</ComboBoxItem>
+                        <ComboBoxItem IsVisible="{Binding $parent[Window].DataContext.IsOpenKhGameEngineVisible}">OpenKH Game Engine</ComboBoxItem>
                         <ComboBoxItem>PlayStation 2 using PCSX2 emulator</ComboBoxItem>
                         <ComboBoxItem>PC Release</ComboBoxItem>
                     </ComboBox>
-                    <StackPanel IsVisible="{Binding OpenKhGameEngineConfigVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel IsVisible="{Binding IsOpenKhGameEngineConfigVisible}">
                         <TextBlock Margin="0 0 0 3">Please select the location of OpenKH Game Engine</TextBlock>
                         <Grid Margin="0 0 0 3" ColumnDefinitions="*,24">
                             <TextBox Grid.Column="0" Text="{Binding OpenKhGameEngineLocation}"/>
@@ -49,7 +49,7 @@
                         </Grid>
                         <TextBlock Margin="0 0 0 3">NOTE: The engine is work in progress and might show inaccuracy.</TextBlock>
                     </StackPanel>
-                    <StackPanel IsVisible="{Binding Pcsx2ConfigVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel IsVisible="{Binding IsPcsx2ConfigVisible}">
                         <TextBlock Margin="0 0 0 3">Please select the location of PCSX2 emulator</TextBlock>
                         <Grid Margin="0 0 0 3" ColumnDefinitions="*,24">
                             <TextBox Grid.Column="0" Text="{Binding Pcsx2Location}"/>
@@ -57,7 +57,7 @@
                         </Grid>
                         <TextBlock Margin="0 0 0 3">NOTE: Only PCSX2 up to 1.6.0 and PCSX2-EX are supported.</TextBlock>
                     </StackPanel>
-                    <StackPanel IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel IsVisible="{Binding IsPcReleaseConfigVisible}">
                         <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" Text="Select if you have the Japanese version or the Global version."/>
                         <ComboBox Margin="0 0 0 6" SelectedIndex="{Binding PCReleaseLanguage}" HorizontalAlignment="Stretch">
                             <ComboBoxItem>Global</ComboBoxItem>
@@ -110,12 +110,12 @@
                         <TextBox Grid.Column="0" Text="{Binding IsoLocationRecom}"/>
                         <Button Grid.Column="1" Command="{Binding SelectIsoCommand}" CommandParameter="Recom" Padding="2" VerticalAlignment="Stretch">📂</Button>
                     </Grid>
-                    <TextBlock TextWrapping="Wrap" IsVisible="{Binding GameRecognizedVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <TextBlock TextWrapping="Wrap" IsVisible="{Binding IsGameRecognizedVisible}">
                         <Run>A copy of </Run>
                         <Run Text="{Binding GameName}"/>
                         <Run> was successfully recognized!</Run>
                     </TextBlock>
-                    <TextBlock TextWrapping="Wrap" IsVisible="{Binding GameNotRecognizedVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <TextBlock TextWrapping="Wrap" IsVisible="{Binding IsGameNotRecognizedVisible}">
                         <Run>It was not possible to recognize the game of the ISO you provided for </Run>
                         <Run Text="{Binding GameName}"/>
                         <Run>. Be sure that the game is within the list of supported games and that you chose the corresponding game to provide the ISO for.</Run>
@@ -125,11 +125,11 @@
 
             <ScrollViewer Name="PageGameData" IsVisible="False">
                 <StackPanel>
-                    <TextBlock Margin="0,0,0,3" TextWrapping="Wrap" IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}"
+                    <TextBlock Margin="0,0,0,3" TextWrapping="Wrap" IsVisible="{Binding IsPcReleaseConfigVisible}"
                                Text="OpenKH can extract all games in the 1.5 + 2.5 collection and KH3D from the 2.8 collection. Check the games below you wish to extract. If you do not see the game you want to use Mod Manager for please go back to the Game Edition page and make sure you selected the correct filepath. Size values are rounded up."/>
-                    <TextBlock Margin="0,0,0,3" TextWrapping="Wrap" IsVisible="{Binding Pcsx2ConfigVisibility, Converter={StaticResource VisibilityToBool}}"
+                    <TextBlock Margin="0,0,0,3" TextWrapping="Wrap" IsVisible="{Binding IsPcsx2ConfigVisible}"
                                Text="OpenKH can extract KH1, KH2, and Recom from their respective ISO files. Check the games below you wish to extract. If you do not see the game you want to use Mod Manager for please go back to the ISO Selection page and make sure you provided the path to the ISO file. Size values are estimates that are rounded up from known unmodified ISO files."/>
-                    <StackPanel IsVisible="{Binding BothPcReleaseSelected, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel IsVisible="{Binding IsBothPcReleasesSelected}">
                         <StackPanel Orientation="Horizontal">
                             <CheckBox IsChecked="{Binding Extractkh1}" Content="KH1-23GB" Margin="0 0 6 4"/>
                             <CheckBox IsChecked="{Binding Extractkh2}" Content="KH2-43GB" Margin="0 0 6 4"/>
@@ -140,51 +140,51 @@
                             <CheckBox IsChecked="{Binding Extractkh3d}" Content="KH3D-51GB" Margin="0 0 6 4"/>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" IsVisible="{Binding PcRelease1525Selected, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsPcRelease1525Selected}">
                         <CheckBox IsChecked="{Binding Extractkh1}" Content="KH1-23GB" Margin="0 0 6 4"/>
                         <CheckBox IsChecked="{Binding Extractkh2}" Content="KH2-43GB" Margin="0 0 6 4"/>
                         <CheckBox IsChecked="{Binding Extractbbs}" Content="BBS-19GB" Margin="0 0 6 4"/>
                         <CheckBox IsChecked="{Binding Extractrecom}" Content="ReCoM-14GB" Margin="0 0 6 4"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" IsVisible="{Binding PcRelease28Selected, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsPcRelease28Selected}">
                         <CheckBox IsChecked="{Binding Extractkh3d}" Content="KH3D-51GB" Margin="0 0 6 4"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" IsVisible="{Binding Pcsx2ConfigVisibility, Converter={StaticResource VisibilityToBool}}">
-                        <CheckBox IsChecked="{Binding Extractkh1}" Content="KH1-4GB" Margin="0 0 6 4" IsVisible="{Binding KH1RecognizedVisibility, Converter={StaticResource VisibilityToBool}}"/>
-                        <CheckBox IsChecked="{Binding Extractkh2}" Content="KH2-4GB" Margin="0 0 6 4" IsVisible="{Binding KH2RecognizedVisibility, Converter={StaticResource VisibilityToBool}}"/>
-                        <CheckBox IsChecked="{Binding Extractrecom}" Content="ReCoM-5GB" Margin="0 0 6 4" IsVisible="{Binding RecomRecognizedVisibility, Converter={StaticResource VisibilityToBool}}"/>
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsPcsx2ConfigVisible}">
+                        <CheckBox IsChecked="{Binding Extractkh1}" Content="KH1-4GB" Margin="0 0 6 4" IsVisible="{Binding IsKh1RecognizedVisible}"/>
+                        <CheckBox IsChecked="{Binding Extractkh2}" Content="KH2-4GB" Margin="0 0 6 4" IsVisible="{Binding IsKh2RecognizedVisible}"/>
+                        <CheckBox IsChecked="{Binding Extractrecom}" Content="ReCoM-5GB" Margin="0 0 6 4" IsVisible="{Binding IsRecomRecognizedVisible}"/>
                     </StackPanel>
                     <TextBlock Margin="0 0 0 3">Extraction folder location:</TextBlock>
                     <Grid Margin="0 0 0 3" ColumnDefinitions="*,24">
                         <TextBox Grid.Column="0" Text="{Binding GameDataLocation}"/>
                         <Button Grid.Column="1" Command="{Binding SelectGameDataLocationCommand}" Padding="2" VerticalAlignment="Stretch">📂</Button>
                     </Grid>
-                    <StackPanel IsVisible="{Binding Pcsx2ConfigVisibility, Converter={StaticResource VisibilityToBool}}">
-                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding GameDataNotFoundVisibility, Converter={StaticResource VisibilityToBool}}" Text="It seems you do not have your Game Data extracted."/>
-                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding GameDataFoundVisibility, Converter={StaticResource VisibilityToBool}}" Text="You already have your Game Data extracted."/>
+                    <StackPanel IsVisible="{Binding IsPcsx2ConfigVisible}">
+                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding IsGameDataNotFoundVisible}" Text="It seems you do not have your Game Data extracted."/>
+                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding IsGameDataFoundVisible}" Text="You already have your Game Data extracted."/>
                     </StackPanel>
-                    <StackPanel IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}">
-                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding GameDataNotFoundVisibility, Converter={StaticResource VisibilityToBool}}" Text="You do not have any extracted data from a supported game."/>
-                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding GameDataFoundVisibility, Converter={StaticResource VisibilityToBool}}" Text="You already have extracted data from a supported game."/>
+                    <StackPanel IsVisible="{Binding IsPcReleaseConfigVisible}">
+                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding IsGameDataNotFoundVisible}" Text="You do not have any extracted data from a supported game."/>
+                        <TextBlock Margin="0 0 0 6" IsVisible="{Binding IsGameDataFoundVisible}" Text="You already have extracted data from a supported game."/>
                     </StackPanel>
-                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding Pcsx2ConfigVisibility, Converter={StaticResource VisibilityToBool}}"
+                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding IsPcsx2ConfigVisible}"
                                Text="Press the button below to initialize the game extraction. It will take between 5 and 15 minutes based on the speed of your hard drive."/>
-                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}"
+                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding IsPcReleaseConfigVisible}"
                                Text="Press the button below to initialize the game extraction. Depending on the speed of your storage, if its a hard drive or an SSD, and how many games selected to extract extraction time may vary a lot."/>
                     <Button Margin="0 0 0 6" HorizontalAlignment="Left" Command="{Binding ExtractGameDataCommand}">Extract game data</Button>
-                    <ProgressBar Margin="0 0 0 6" Height="22" IsVisible="{Binding ProgressBarVisibility, Converter={StaticResource VisibilityToBool}}" Minimum="0" Maximum="1" Value="{Binding ExtractionProgress}"/>
-                    <TextBlock Margin="0 0 0 3" IsVisible="{Binding ExtractionCompleteVisibility, Converter={StaticResource VisibilityToBool}}"
+                    <ProgressBar Margin="0 0 0 6" Height="22" IsVisible="{Binding IsProgressBarVisible}" Minimum="0" Maximum="1" Value="{Binding ExtractionProgress}"/>
+                    <TextBlock Margin="0 0 0 3" IsVisible="{Binding IsExtractionCompleteVisible}"
                                Text="The extraction of the game's data succeded!"/>
-                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding IsPcReleaseConfigVisible}">
                         <Run Foreground="Red">WARNING</Run>
                         <Run> If you do not extract a games data only Lua Scripts will function properly. Only check the box below if you will only be installing Lua Scripts in Mods Manager.</Run>
                     </TextBlock>
-                    <CheckBox IsChecked="{Binding OverrideGameDataFound}" Content="Skip Game Extraction" IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}" Margin="0 0 0 4"/>
-                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <CheckBox IsChecked="{Binding OverrideGameDataFound}" Content="Skip Game Extraction" IsVisible="{Binding IsPcReleaseConfigVisible}" Margin="0 0 0 4"/>
+                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding IsPcReleaseConfigVisible}">
                         <Run Foreground="Red">WARNING</Run>
                         <Run> If you do not have the space to extract the remastered files for each game (which are about 80% of the sizes listed above) you can check the box below to skip extracting them. The consequence of doing so depends on the game: KH1 has important data files that are needed for modifying the game beyond just visual; KH2 only has images so some mods may have visual issues.</Run>
                     </TextBlock>
-                    <CheckBox IsVisible="{Binding PcReleaseConfigVisibility, Converter={StaticResource VisibilityToBool}}" IsChecked="{Binding SkipRemastered}" Content="Skip Extracting Remastered Files"/>
+                    <CheckBox IsVisible="{Binding IsPcReleaseConfigVisible}" IsChecked="{Binding SkipRemastered}" Content="Skip Extracting Remastered Files"/>
                 </StackPanel>
             </ScrollViewer>
 
@@ -220,12 +220,12 @@
                     </ComboBox>
                     <TextBlock Margin="0 0 0 3" TextWrapping="Wrap"
                                Text="Panacea allows the PC version of Kingdom Hearts to load the mods you have installed, without modifying the game files. Panacea will run every time you start the game and attempt to load built mods. To uninstall Panacea, click Remove Panacea button."/>
-                    <StackPanel IsVisible="{Binding PanaceaNotInstalledVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel IsVisible="{Binding IsPanaceaNotInstalledVisible}">
                         <TextBlock Margin="0 0 0 3" TextWrapping="Wrap"
                                    Text="It seems you do not have Panacea installed or you are running a different version than the one compatible with this version of Mods Manager. We need your permission to install it into the game's folder. If you choose not to install, you may need to use one of the Build and Patch options to apply mods to your game."/>
                         <Button Margin="0 0 0 6" Content="Install Panacea" HorizontalAlignment="Left" Command="{Binding InstallPanaceaCommand}"/>
                     </StackPanel>
-                    <StackPanel IsVisible="{Binding PanaceaInstalledVisibility, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel IsVisible="{Binding IsPanaceaInstalledVisible}">
                         <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" Text="OpenKH Panacea is installed!"/>
                         <Button Margin="0 0 0 6" Content="Remove Panacea" HorizontalAlignment="Left" Command="{Binding RemovePanaceaCommand}"/>
                     </StackPanel>
@@ -239,24 +239,24 @@
                         <ComboBoxItem>KINGDOM HEARTS HD 1.5+2.5 ReMIX</ComboBoxItem>
                         <ComboBoxItem>KINGDOM HEARTS HD 2.8 Final Chapter Prologue</ComboBoxItem>
                     </ComboBox>
-                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding LuaBackendNotFoundVisibility, Converter={StaticResource VisibilityToBool}}"
+                    <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" IsVisible="{Binding IsLuaBackendNotFoundVisible}"
                                Text="It seems you have not installed Lua Backend for use with Panacea. If you wish to do this press the button below. Also if you wish to have OpenKH configure it so Lua Backend can load scripts installed in Mod Manager check the games below."/>
-                    <TextBlock Margin="0 0 0 6" IsVisible="{Binding LuaBackendFoundVisibility, Converter={StaticResource VisibilityToBool}}" TextWrapping="Wrap"
+                    <TextBlock Margin="0 0 0 6" IsVisible="{Binding IsLuaBackendFoundVisible}" TextWrapping="Wrap"
                                Text="Lua Backend is installed! for use with Panacea. If you have not already and wish to configure it so it runs scripts from mods installed into OpenKH check the games below and press the configure button."/>
-                    <StackPanel Orientation="Horizontal" IsVisible="{Binding InstallForPc1525, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsInstallForPc1525Visible}">
                         <CheckBox IsChecked="{Binding LuaConfigkh1}" Content="KH1" Margin="0 0 10 4"/>
                         <CheckBox IsChecked="{Binding LuaConfigkh2}" Content="KH2" Margin="0 0 10 4"/>
                         <CheckBox IsChecked="{Binding LuaConfigbbs}" Content="BBS" Margin="0 0 10 4"/>
                         <CheckBox IsChecked="{Binding LuaConfigrecom}" Content="ReCoM" Margin="0 0 10 4"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" IsVisible="{Binding InstallForPc28, Converter={StaticResource VisibilityToBool}}">
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsInstallForPc28Visible}">
                         <CheckBox IsChecked="{Binding LuaConfigkh3d}" Content="KH3D" Margin="0 0 10 4"/>
                     </StackPanel>
-                    <Button Margin="0 0 0 6" Content="Install and Configure Lua Backend" HorizontalAlignment="Left" Command="{Binding InstallLuaBackendCommand}" CommandParameter="false" IsVisible="{Binding LuaBackendNotFoundVisibility, Converter={StaticResource VisibilityToBool}}"/>
-                    <Button Margin="0 0 0 6" Content="Configure Lua Backend" HorizontalAlignment="Left" Command="{Binding InstallLuaBackendCommand}" CommandParameter="true" IsVisible="{Binding LuaBackendFoundVisibility, Converter={StaticResource VisibilityToBool}}"/>
-                    <TextBlock Margin="0 2 0 10" IsVisible="{Binding LuaBackendFoundVisibility, Converter={StaticResource VisibilityToBool}}" TextWrapping="Wrap"
+                    <Button Margin="0 0 0 6" Content="Install and Configure Lua Backend" HorizontalAlignment="Left" Command="{Binding InstallLuaBackendCommand}" CommandParameter="false" IsVisible="{Binding IsLuaBackendNotFoundVisible}"/>
+                    <Button Margin="0 0 0 6" Content="Configure Lua Backend" HorizontalAlignment="Left" Command="{Binding InstallLuaBackendCommand}" CommandParameter="true" IsVisible="{Binding IsLuaBackendFoundVisible}"/>
+                    <TextBlock Margin="0 2 0 10" IsVisible="{Binding IsLuaBackendFoundVisible}" TextWrapping="Wrap"
                                Text="If you wish to uninstall Lua Backend completely press the button below."/>
-                    <Button Margin="0 0 0 6" Content="Uninstall Lua Backend" HorizontalAlignment="Left" Command="{Binding RemoveLuaBackendCommand}" IsVisible="{Binding LuaBackendFoundVisibility, Converter={StaticResource VisibilityToBool}}"/>
+                    <Button Margin="0 0 0 6" Content="Uninstall Lua Backend" HorizontalAlignment="Left" Command="{Binding RemoveLuaBackendCommand}" IsVisible="{Binding IsLuaBackendFoundVisible}"/>
                 </StackPanel>
             </ScrollViewer>
 
@@ -271,8 +271,8 @@
                         <Run Foreground="Red">WARNING</Run>
                         <Run> Steam must be running otherwise the game will fail to start. It will start to open then crash for seemingly no reason. Make sure steam is open if using this.</Run>
                     </TextBlock>
-                    <Button Margin="0 0 0 6" Content="Create steam__appid.txt" HorizontalAlignment="Left" Command="{Binding InstallSteamAPIFile}" IsVisible="{Binding SteamAPIFileNotFound, Converter={StaticResource VisibilityToBool}}"/>
-                    <Button Margin="0 0 0 6" Content="Delete steam__appid.txt" HorizontalAlignment="Left" Command="{Binding RemoveSteamAPIFile}" IsVisible="{Binding SteamAPIFileFound, Converter={StaticResource VisibilityToBool}}"/>
+                    <Button Margin="0 0 0 6" Content="Create steam__appid.txt" HorizontalAlignment="Left" Command="{Binding InstallSteamAPIFile}" IsVisible="{Binding IsSteamApiFileNotFoundVisible}"/>
+                    <Button Margin="0 0 0 6" Content="Delete steam__appid.txt" HorizontalAlignment="Left" Command="{Binding RemoveSteamAPIFile}" IsVisible="{Binding IsSteamApiFileFoundVisible}"/>
                 </StackPanel>
             </ScrollViewer>
 
@@ -294,3 +294,4 @@
         </StackPanel>
     </Grid>
 </common:DialogWindowBase>
+
