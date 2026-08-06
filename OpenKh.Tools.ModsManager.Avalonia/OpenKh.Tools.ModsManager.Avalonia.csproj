@@ -24,7 +24,7 @@
        to Core are consumed through its project reference, not source links. -->
   <ItemGroup>
     <Compile Include="..\OpenKh.Tools.ModsManager\ViewModels\**\*.cs" LinkBase="Shared\ViewModels"
-             Exclude="..\OpenKh.Tools.ModsManager\ViewModels\DownloadableModViewModel.cs;..\OpenKh.Tools.ModsManager\ViewModels\ModViewModel.cs;..\OpenKh.Tools.ModsManager\ViewModels\SetupWizardViewModel.cs" />
+             Exclude="..\OpenKh.Tools.ModsManager\ViewModels\DownloadableModViewModel.cs;..\OpenKh.Tools.ModsManager\ViewModels\ModViewModel.cs" />
     <Compile Include="..\OpenKh.Tools.ModsManager\Services\**\*.cs" LinkBase="Shared\Services"
              Exclude="..\OpenKh.Tools.ModsManager\Services\SettingBinding.cs;..\OpenKh.Tools.ModsManager\Services\GetActiveWindowService.cs;..\OpenKh.Tools.ModsManager\Services\ProgressWindowService.cs;..\OpenKh.Tools.ModsManager\Services\**\*Wpf*.cs" />
     <Compile Include="..\OpenKh.Tools.ModsManager\Models\**\*.cs" LinkBase="Shared\Models" />

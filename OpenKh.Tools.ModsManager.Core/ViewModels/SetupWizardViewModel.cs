@@ -414,7 +414,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
             {
                 IsNotExtracting = false;
                 ExtractionProgress = 0;
-                var progress = new Progress<GameDataExtractionProgress>(value =>
+                var progress = new ImmediateProgress<GameDataExtractionProgress>(value =>
                 {
                     if (_dependencies.Dispatcher.CheckAccess()) ExtractionProgress = value.Fraction;
                     else _dependencies.Dispatcher.Post(() => ExtractionProgress = value.Fraction);
@@ -539,6 +539,13 @@ namespace OpenKh.Tools.ModsManager.ViewModels
             var remix = installs?.Any(x => x.Collection == PcGameCollection.KingdomHearts1525) == true ? "FOUND" : "MISSING";
             var kh28 = installs?.Any(x => x.Collection == PcGameCollection.KingdomHearts28) == true ? "FOUND" : "MISSING";
             return $"Kingdom Hearts HD 1.5+2.5: {remix}\nKingdom Hearts HD 2.8: {kh28}";
+        }
+        private sealed class ImmediateProgress<T> : IProgress<T>
+        {
+            private readonly Action<T> _report;
+
+            public ImmediateProgress(Action<T> report) => _report = report;
+            public void Report(T value) => _report(value);
         }
         private void NotifyIsoState(string visibility, bool route) { Notify(nameof(IsGameDataFound), nameof(IsGameDataFoundVisible), nameof(IsGameDataNotFoundVisible), visibility); if (route) OnPropertyChanged(nameof(RouteState)); }
         private void NotifyPcState() { Notify(nameof(IsGameSelected), nameof(IsGameDataFound), nameof(PcReleaseSelections), nameof(IsBothPcReleasesSelected), nameof(IsPcRelease1525Selected), nameof(IsPcRelease28Selected)); NotifyLoaderState(); }

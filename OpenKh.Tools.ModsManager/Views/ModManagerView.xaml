@@ -120,7 +120,7 @@
                     can just always use 'Build and Run'.
                 </TextBlock>
             </StackPanel>
-            <ScrollViewer Visibility="{Binding IsModInfoVisible}">
+            <ScrollViewer Visibility="{Binding IsModInfoVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <local:ModDetailsView Grid.Column="3" DataContext="{Binding SelectedValue}"/>
             </ScrollViewer>
         </Grid>

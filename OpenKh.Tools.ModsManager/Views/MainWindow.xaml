@@ -74,14 +74,14 @@
                 <Separator/>
                 <MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4"/>
             </MenuItem>
-            <MenuItem Header="Mod Loader" Visibility="{Binding ModLoader}">
+            <MenuItem Header="Mod Loader" Visibility="{Binding ModLoader, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <MenuItem Header="Build and Run" Command="{Binding BuildAndRunCommand}" InputGestureText="F5"/>
                 <MenuItem Header="Build Only" Command="{Binding BuildCommand}" InputGestureText="Ctrl+B"/>
                 <MenuItem Header="Run Only" Command="{Binding RunCommand}" InputGestureText="Ctrl+F5"/>
-                <MenuItem Header="Stop" Command="{Binding StopRunningInstanceCommand}" Visibility="{Binding notPC}" InputGestureText="Shift+F5"/>
-                <MenuItem Header="Fast Restore" Command="{Binding RestoreCommand}" Visibility="{Binding isPC}" CommandParameter="False" InputGestureText="Ctrl+R"/>
+                <MenuItem Header="Stop" Command="{Binding StopRunningInstanceCommand}" Visibility="{Binding notPC, Converter={StaticResource BooleanToVisibilityConverter}}" InputGestureText="Shift+F5"/>
+                <MenuItem Header="Fast Restore" Command="{Binding RestoreCommand}" Visibility="{Binding isPC, Converter={StaticResource BooleanToVisibilityConverter}}" CommandParameter="False" InputGestureText="Ctrl+R"/>
             </MenuItem>
-            <MenuItem Header="Patching" Visibility="{Binding PatchVisible}">
+            <MenuItem Header="Patching" Visibility="{Binding PatchVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <MenuItem Header="Build and Patch" Command="{Binding PatchCommand}" CommandParameter="false" InputGestureText="Ctrl+P"/>
                 <MenuItem Header="Build and Fast Patch" Command="{Binding PatchCommand}" CommandParameter="true" InputGestureText="Ctrl+P+F"/>
                 <MenuItem Header="Run Only" Command="{Binding RunCommand}" InputGestureText="Ctrl+F5"/>
@@ -93,7 +93,7 @@
                 <MenuItem Header="Check for update" Command="{Binding CheckOpenkhUpdateCommand}"/>
                 <MenuItem Header="Check Mods for Updates" Command="{Binding CheckForModUpdatesCommand}"/>
                 <MenuItem Header="Dark Mode" IsCheckable="True" IsChecked="{Binding ColorTheme.DarkMode}" StaysOpenOnClick="True"/>
-                <MenuItem Header="Panacea Settings" Visibility="{Binding PanaceaSettings}">
+                <MenuItem Header="Panacea Settings" Visibility="{Binding PanaceaSettings, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <MenuItem Header="Enable Console" IsCheckable="True" IsChecked="{Binding PanaceaConsoleEnabled}" StaysOpenOnClick="True"/>
                     <MenuItem Header="Enable Debug Log" IsCheckable="True" IsChecked="{Binding PanaceaDebugLogEnabled}" IsEnabled="{Binding PanaceaConsoleEnabled}" StaysOpenOnClick="True"/>
                     <MenuItem Header="Enable Sound Debug" IsCheckable="True" IsChecked="{Binding PanaceaSoundDebugEnabled}" IsEnabled="{Binding PanaceaDebugLogEnabled}" StaysOpenOnClick="True"/>
@@ -154,18 +154,18 @@
                 <MenuItem Header="Dev View" IsCheckable="True" IsChecked="{Binding DevView}" StaysOpenOnClick="True"/>
             </MenuItem>
             <MenuItem Header="Presets" Command="{Binding OpenPresetMenuCommand}"/>
-            <MenuItem Header="PC Version" Focusable="False" IsHitTestVisible="False" Visibility="{Binding isPC}"/>
-            <MenuItem Header="Emulator" Focusable="False" IsHitTestVisible="False" Visibility="{Binding notPC}"/>
+            <MenuItem Header="PC Version" Focusable="False" IsHitTestVisible="False" Visibility="{Binding isPC, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <MenuItem Header="Emulator" Focusable="False" IsHitTestVisible="False" Visibility="{Binding notPC, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <MenuItem Header="_Creator">
                 <MenuItem Header="_YamlGenerator" Command="{Binding YamlGeneratorCommand}" />
             </MenuItem>
         </Menu>
-        <ComboBox SelectedIndex="{Binding GametoLaunch}" Visibility="{Binding GameSelectVisible}" IsHitTestVisible="{Binding GameSelectInteractable}" Focusable="{Binding GameSelectInteractable}" HorizontalAlignment="Right" Margin="0,0,10,0" MinWidth="144">
-            <ComboBoxItem Visibility="{Binding GameSelectKH2}">Kingdom Hearts 2</ComboBoxItem>
-            <ComboBoxItem Visibility="{Binding GameSelectKH1}">Kingdom Hearts 1</ComboBoxItem>
-            <ComboBoxItem Visibility="{Binding GameSelectBBS}">Birth by Sleep</ComboBoxItem>
-            <ComboBoxItem Visibility="{Binding GameSelectRecom}">Re:Chain of Memories</ComboBoxItem>
-            <ComboBoxItem Visibility="{Binding GameSelectKH3D}">Dream Drop Distance</ComboBoxItem>
+        <ComboBox SelectedIndex="{Binding GametoLaunch}" Visibility="{Binding GameSelectVisible, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="{Binding GameSelectInteractable}" Focusable="{Binding GameSelectInteractable}" HorizontalAlignment="Right" Margin="0,0,10,0" MinWidth="144">
+            <ComboBoxItem Visibility="{Binding GameSelectKH2, Converter={StaticResource BooleanToVisibilityConverter}}">Kingdom Hearts 2</ComboBoxItem>
+            <ComboBoxItem Visibility="{Binding GameSelectKH1, Converter={StaticResource BooleanToVisibilityConverter}}">Kingdom Hearts 1</ComboBoxItem>
+            <ComboBoxItem Visibility="{Binding GameSelectBBS, Converter={StaticResource BooleanToVisibilityConverter}}">Birth by Sleep</ComboBoxItem>
+            <ComboBoxItem Visibility="{Binding GameSelectRecom, Converter={StaticResource BooleanToVisibilityConverter}}">Re:Chain of Memories</ComboBoxItem>
+            <ComboBoxItem Visibility="{Binding GameSelectKH3D, Converter={StaticResource BooleanToVisibilityConverter}}">Dream Drop Distance</ComboBoxItem>
         </ComboBox>
         <local:ModManagerView Grid.Row="1" DataContext="{Binding}"/>
 

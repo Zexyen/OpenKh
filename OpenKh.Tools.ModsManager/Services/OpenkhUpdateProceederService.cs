@@ -9,8 +9,13 @@ using System.Threading.Tasks;
 
 namespace OpenKh.Tools.ModsManager.Services
 {
-    public class OpenkhUpdateProceederService
+    public class OpenkhUpdateProceederService : Interfaces.IApplicationUpdateExecutor
     {
+        public bool CanExecute => OperatingSystem.IsWindows();
+
+        public Task ExecuteAsync(string downloadUrl, IProgress<double> progress, CancellationToken cancellationToken) =>
+            UpdateAsync(downloadUrl, value => progress?.Report(value), cancellationToken);
+
         public async Task UpdateAsync(string downloadZipUrl, Action<float> progress, CancellationToken cancellation)
         {
             var tempId = Guid.NewGuid().ToString("N");

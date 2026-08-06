@@ -1,6 +1,7 @@
 using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.ViewModels;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace OpenKh.Tools.ModsManager.Views
@@ -10,21 +11,41 @@ namespace OpenKh.Tools.ModsManager.Views
     /// </summary>
     public partial class MainWindow : Window
     {
+        private bool _closeApproved;
         public MainWindow()
         {
             InitializeComponent();
             ModsService.Initialize(new WpfMessageDialogService());
-            var platform = WpfPlatformComposition.Create();
-            ModViewModelFactory.Configure((model, changeState) => new ModViewModel(model, changeState,
-                platform.Progress, platform.Messages, platform.Dispatcher, platform.Navigation, platform.Images));
-            DataContext = new MainViewModel(platform.Progress);
+            DataContext = WpfPlatformComposition.CreateMainViewModel();
+            Loaded += InitializeAsync;
+            Closing += CloseAsync;
         }
 
-        protected override void OnClosed(EventArgs e)
+        private async void InitializeAsync(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainViewModel)?.CloseAllWindows();
+            Loaded -= InitializeAsync;
+            try
+            {
+                await ((MainViewModel)DataContext).InitializeAsync();
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception exception)
+            {
+                await new WpfMessageDialogService().ShowAsync(new Interfaces.MessageDialogRequest(
+                    exception.Message, "Initialization error", Interfaces.MessageDialogKind.Error));
+            }
+        }
+
+        private async void CloseAsync(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_closeApproved) return;
+            e.Cancel = true;
+            Closing -= CloseAsync;
+            if (DataContext is MainViewModel viewModel)
+                await viewModel.CloseAsync();
             WinSettings.Default.Save();
-            base.OnClosed(e);
+            _closeApproved = true;
+            Close();
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)

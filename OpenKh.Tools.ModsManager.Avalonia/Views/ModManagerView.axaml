@@ -64,7 +64,7 @@
                 <TextBlock Margin="0 0 0 3" TextWrapping="Wrap" Foreground="{Binding ColorTheme.TextColor}"
                            Text="Once you have selected the mods you want to, go to the menu 'Run' and then select 'Build and Run'! The 'Build' is only required when the content of a mod or the selected mod changes. If you are unsure, you can just always use 'Build and Run'."/>
             </StackPanel>
-            <ScrollViewer IsVisible="{Binding IsModInfoVisible, Converter={StaticResource VisibilityToBool}}">
+            <ScrollViewer IsVisible="{Binding IsModInfoVisible}">
                 <local:ModDetailsView DataContext="{Binding SelectedValue}"/>
             </ScrollViewer>
         </Grid>

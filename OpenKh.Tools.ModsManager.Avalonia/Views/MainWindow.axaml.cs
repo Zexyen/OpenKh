@@ -8,17 +8,31 @@ namespace OpenKh.Tools.ModsManager.Views
 {
     public partial class MainWindow : Window
     {
+        private bool _closeApproved;
         public MainWindow()
         {
             InitializeComponent();
             ModsService.Initialize(new AvaloniaMessageDialogService());
-            var platform = AvaloniaPlatformComposition.Create();
-            ModViewModelFactory.Configure((model, changeState) => new ModViewModel(model, changeState,
-                platform.Progress, platform.Messages, platform.Dispatcher, platform.Navigation, platform.Images));
-            DataContext = new MainViewModel(platform.Progress);
+            DataContext = AvaloniaPlatformComposition.CreateMainViewModel();
+            Opened += InitializeAsync;
 
             RestoreWindowPlacement();
-            Closing += (_, _) => SaveWindowPlacement();
+            Closing += CloseAsync;
+        }
+
+        private async void InitializeAsync(object sender, EventArgs e)
+        {
+            Opened -= InitializeAsync;
+            try
+            {
+                await ((MainViewModel)DataContext).InitializeAsync();
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception exception)
+            {
+                await new AvaloniaMessageDialogService().ShowAsync(new Interfaces.MessageDialogRequest(
+                    exception.Message, "Initialization error", Interfaces.MessageDialogKind.Error));
+            }
         }
 
         private void RestoreWindowPlacement()
@@ -46,10 +60,16 @@ namespace OpenKh.Tools.ModsManager.Views
             }
         }
 
-        protected override void OnClosed(EventArgs e)
+        private async void CloseAsync(object sender, WindowClosingEventArgs e)
         {
-            (DataContext as MainViewModel)?.CloseAllWindows();
-            base.OnClosed(e);
+            if (_closeApproved) return;
+            e.Cancel = true;
+            Closing -= CloseAsync;
+            SaveWindowPlacement();
+            if (DataContext is MainViewModel viewModel)
+                await viewModel.CloseAsync();
+            _closeApproved = true;
+            Close();
         }
     }
 }

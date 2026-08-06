@@ -14,21 +14,36 @@ namespace OpenKh.Tools.ModsManager.Infrastructure
 
     public class AsyncCommand : ICommand
     {
-        private readonly Func<object, Task> _execute;
+        private readonly Func<object, CancellationToken, Task> _execute;
         private readonly Predicate<object> _canExecute;
+        private readonly CancellationToken _cancellationToken;
         private int _isExecuting;
 
         public AsyncCommand(Func<Task> execute, Func<bool> canExecute = null)
-            : this(_ => execute(), canExecute == null ? null : _ => canExecute())
+            : this((_, _) => execute(), canExecute == null ? null : _ => canExecute())
         {
             ArgumentNullException.ThrowIfNull(execute);
         }
 
         public AsyncCommand(Func<object, Task> execute, Predicate<object> canExecute = null)
+            : this((parameter, _) => execute(parameter), canExecute)
+        {
+        }
+
+        public AsyncCommand(Func<CancellationToken, Task> execute, Func<bool> canExecute = null,
+            CancellationToken cancellationToken = default)
+            : this((_, token) => execute(token), canExecute == null ? null : _ => canExecute(), cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(execute);
+        }
+
+        public AsyncCommand(Func<object, CancellationToken, Task> execute, Predicate<object> canExecute = null,
+            CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(execute);
             _execute = execute;
             _canExecute = canExecute;
+            _cancellationToken = cancellationToken;
         }
 
         public event EventHandler CanExecuteChanged;
@@ -58,7 +73,8 @@ namespace OpenKh.Tools.ModsManager.Infrastructure
             RaiseCanExecuteChanged();
             try
             {
-                await _execute(parameter).ConfigureAwait(true);
+                _cancellationToken.ThrowIfCancellationRequested();
+                await _execute(parameter, _cancellationToken).ConfigureAwait(true);
             }
             finally
             {

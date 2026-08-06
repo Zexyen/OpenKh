@@ -782,6 +782,21 @@ namespace OpenKh.Tools.ModsManager.Services
             }
         }
 
+        public async Task StopAsync()
+        {
+            _cancellationTokenSource?.Cancel();
+            var task = _injectorTask;
+            if (task == null)
+                return;
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (System.OperationCanceledException)
+            {
+            }
+        }
+
         private void MainLoop(Stream stream, IDebugging debugging)
         {
             var isProcessDead = false;

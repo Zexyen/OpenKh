@@ -78,7 +78,7 @@
 					process with either the 'Build' or 'Build and Run' commands.
 				</TextBlock>
 			</StackPanel>
-			<ScrollViewer Visibility="{Binding IsModInfoVisible}">
+            <ScrollViewer Visibility="{Binding IsModInfoVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
 				<local:CollectionOptionalModDetailsView Grid.Column="3" DataContext="{Binding CollectionSelectedValue}"/>
 			</ScrollViewer>
 		</Grid>

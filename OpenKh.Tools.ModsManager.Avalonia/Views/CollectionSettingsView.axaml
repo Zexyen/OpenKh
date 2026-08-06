@@ -41,7 +41,7 @@
                 <TextBlock Margin="3 0 0 3" TextWrapping="Wrap" Foreground="{Binding ColorTheme.TextColor}"
                            Text="After selecting the mods you wish to run with close this window and follow your normal 'Build' process with either the 'Build' or 'Build and Run' commands."/>
             </StackPanel>
-            <ScrollViewer IsVisible="{Binding IsModInfoVisible, Converter={StaticResource VisibilityToBool}}">
+            <ScrollViewer IsVisible="{Binding IsModInfoVisible}">
                 <local:CollectionOptionalModDetailsView DataContext="{Binding CollectionSelectedValue}"/>
             </ScrollViewer>
         </Grid>

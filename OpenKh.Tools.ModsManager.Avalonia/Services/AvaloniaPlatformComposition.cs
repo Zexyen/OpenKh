@@ -21,5 +21,18 @@ namespace OpenKh.Tools.ModsManager.Services
             return new SetupWizardViewModel(new SetupWizardDependencies(platform.Dispatcher, platform.Messages, platform.Files,
                 new GameInstallDiscoveryService(), new SetupWizardModLoaderService(), new GameDataExtractionService()));
         }
+
+        public static MainViewModel CreateMainViewModel()
+        {
+            var platform = Create();
+            return new MainViewModel(new MainViewModelDependencies(platform.Progress, platform.Messages,
+                platform.Dispatcher, platform.Navigation, platform.Browser, platform.Lifetime,
+                platform.Processes, platform.DebugLog,
+                (model, changeState) => new ModViewModel(model, changeState, platform.Progress,
+                    platform.Messages, platform.Dispatcher, platform.Navigation, platform.Images),
+                new ModWorkflowService(), new PresetService(), new ApplicationUpdateChecker(),
+                new UnsupportedApplicationUpdateExecutor(), new GameWorkflowService(platform.Processes),
+                new GamePatchService()));
+        }
     }
 }
