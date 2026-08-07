@@ -1,10 +1,10 @@
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using OpenKh.Tools.Common.Avalonia;
+using OpenKh.Tools.ModsManager.Infrastructure;
+using OpenKh.Tools.ModsManager.Interfaces;
 using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.ViewModels;
-using System.Windows;
-using Xe.Tools.Wpf.Commands;
 
 namespace OpenKh.Tools.ModsManager.Views
 {
@@ -14,23 +14,21 @@ namespace OpenKh.Tools.ModsManager.Views
         public MainViewModel MainVm { get; set; }
         public RelayCommand CloseCommand { get; }
         public string PresetName { get; set; }
+        private readonly IMessageDialogService _messages;
 
-        public PresetsWindow()
-        {
-            InitializeComponent();
-            DataContext = this;
+        public PresetsWindow() : this(null, null) { }
 
-            CloseCommand = new RelayCommand(_ => Close());
-        }
-
-        public PresetsWindow(MainViewModel mvm)
+        internal PresetsWindow(MainViewModel mvm, IMessageDialogService messages)
         {
             MainVm = mvm;
             InitializeComponent();
             DataContext = this;
+            _messages = messages ?? new AvaloniaMessageDialogService(() => this);
 
             CloseCommand = new RelayCommand(_ => Close());
         }
+
+        public PresetsWindow(MainViewModel mvm) : this(mvm, null) { }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
@@ -55,13 +53,17 @@ namespace OpenKh.Tools.ModsManager.Views
             Close();
         }
 
-        private void Button_RemovePreset(object sender, RoutedEventArgs e)
+        private async void Button_RemovePreset(object sender, RoutedEventArgs e)
         {
             if (List_Presets.SelectedItem == null)
                 return;
             string presetName = (string)List_Presets.SelectedItem;
-            MessageBoxResult messageBoxResult = MessageBox.Show($"Do you want to remove {presetName} preset.", "Delete Confirmation", MessageBoxButton.YesNo);
-            if (messageBoxResult == MessageBoxResult.Yes)
+            var result = await _messages.ShowAsync(new MessageDialogRequest(
+                $"Do you want to remove {presetName} preset.",
+                "Delete Confirmation",
+                MessageDialogKind.Information,
+                MessageDialogButtons.YesNo));
+            if (result == MessageDialogResult.Yes)
             {
                 MainVm.RemovePreset(presetName);
             }

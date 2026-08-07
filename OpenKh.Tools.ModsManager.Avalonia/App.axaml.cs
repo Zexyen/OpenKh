@@ -18,11 +18,6 @@ namespace OpenKh.Tools.ModsManager
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                // Re-evaluate command CanExecute after input events, like
-                // WPF's CommandManager does — the shared ViewModels depend
-                // on it.
-                OpenKh.Tools.Common.Avalonia.CommandManagerBehavior.Attach();
-
                 // The tool's Dark Mode setting only paints backgrounds via
                 // ColorTheme bindings; the Fluent theme variant must follow it
                 // too, or themed foregrounds (ComboBox selection text, menu

@@ -1,18 +1,24 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using System.Collections.Generic;
+using OpenKh.Tools.ModsManager.Interfaces;
+using OpenKh.Tools.ModsManager.Services;
+using System;
+using System.IO;
 using System.Linq;
-using FileDialog = Xe.Tools.Wpf.Dialogs.FileDialog;
-using FileDialogFilter = Xe.Tools.Wpf.Dialogs.FileDialogFilter;
 
 namespace OpenKh.Tools.ModsManager.UserControls
 {
     public partial class SaveFileSelectorControl : UserControl
     {
-        public SaveFileSelectorControl()
+        private readonly IFilePickerService _files;
+
+        public SaveFileSelectorControl() : this(null) { }
+
+        internal SaveFileSelectorControl(IFilePickerService files)
         {
             InitializeComponent();
+            _files = files ?? new AvaloniaFilePickerService(() => TopLevel.GetTopLevel(this) as Window);
         }
 
         public static readonly StyledProperty<string> FilePathProperty =
@@ -33,22 +39,23 @@ namespace OpenKh.Tools.ModsManager.UserControls
             set => SetValue(FilterProperty, value);
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<FileDialogFilter> filters =
-                (Filter.Length != 0)
-                    ? Filter.Split('|')
-                        .Chunk(2)
-                        .Select(pair => FileDialogFilter.ByPatterns(pair[0], pair[1].Split(';').AsEnumerable()))
-                        .ToArray()
-                    : null;
+        public static FilePickerFilter[] ParseFilters(string filter) =>
+            string.IsNullOrEmpty(filter)
+                ? null
+                : filter.Split('|')
+                    .Chunk(2)
+                    .Where(pair => pair.Length == 2)
+                    .Select(pair => new FilePickerFilter(pair[0], pair[1].Split(';')))
+                    .ToArray();
 
-            FileDialog.OnSave(
-                path => FilePath = path,
-                filters,
-                FilePath,
-                TopLevel.GetTopLevel(this) as Window
-            );
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
+            var path = await _files.SaveFileAsync(new SaveFileRequest(
+                SuggestedFileName: string.IsNullOrEmpty(FilePath) ? null : Path.GetFileName(FilePath),
+                SuggestedStartLocation: string.IsNullOrEmpty(FilePath) ? null : Path.GetDirectoryName(FilePath),
+                Filters: ParseFilters(Filter)));
+            if (path != null)
+                FilePath = path;
         }
     }
 }

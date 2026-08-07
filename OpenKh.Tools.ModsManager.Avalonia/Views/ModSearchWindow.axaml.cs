@@ -2,7 +2,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using OpenKh.Tools.Common.Avalonia;
+using OpenKh.Tools.ModsManager.Infrastructure;
 using OpenKh.Tools.ModsManager.ExtensionMethods;
+using OpenKh.Tools.ModsManager.Interfaces;
 using OpenKh.Tools.ModsManager.Models;
 using OpenKh.Tools.ModsManager.Services;
 using OpenKh.Tools.ModsManager.ViewModels;
@@ -18,8 +20,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using Xe.Tools.Wpf.Commands;
 using static OpenKh.Tools.ModsManager.Services.DownloadableModsService;
 
 namespace OpenKh.Tools.ModsManager.Views
@@ -143,7 +143,7 @@ namespace OpenKh.Tools.ModsManager.Views
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"Error updating mod lists: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            _ = ShowErrorAsync($"Error updating mod lists: {ex.Message}");
                         }
                     }
                 )
@@ -191,21 +191,9 @@ namespace OpenKh.Tools.ModsManager.Views
 
             VM.ClearLog = new RelayCommand(_ => _messages.Clear());
 
-            VM.ShowLog = new RelayCommand(_ => MessageBox.Show(string.Join("\n", _messages.TakeLast(100))));
+            VM.ShowLog = new AsyncCommand(ShowLogAsync);
 
-            VM.CopyLog = new RelayCommand(
-                async _ =>
-                {
-                    try
-                    {
-                        await TopLevel.GetTopLevel(this).Clipboard.SetTextAsync(string.Join("\n", _messages));
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error copying log to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            );
+            VM.CopyLog = new AsyncCommand(CopyLogAsync);
 
             Opened += ModSearchWindow_Opened;
 
@@ -289,11 +277,40 @@ namespace OpenKh.Tools.ModsManager.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading mods: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                await ShowErrorAsync($"Error loading mods: {ex.Message}");
             }
             finally
             {
                 VM.IsLoading = false;
+            }
+        }
+
+        private Task<MessageDialogResult> ShowErrorAsync(string message) =>
+            _platform.Messages.ShowAsync(new MessageDialogRequest(
+                message, "Error", MessageDialogKind.Error, MessageDialogButtons.Ok));
+
+        private async Task ShowLogAsync()
+        {
+            try
+            {
+                await _platform.Messages.ShowAsync(
+                    new MessageDialogRequest(string.Join("\n", _messages.TakeLast(100))));
+            }
+            catch (Exception exception)
+            {
+                await ShowErrorAsync($"Error showing log: {exception.Message}");
+            }
+        }
+
+        private async Task CopyLogAsync()
+        {
+            try
+            {
+                await TopLevel.GetTopLevel(this).Clipboard.SetTextAsync(string.Join("\n", _messages));
+            }
+            catch (Exception exception)
+            {
+                await ShowErrorAsync($"Error copying log to clipboard: {exception.Message}");
             }
         }
 

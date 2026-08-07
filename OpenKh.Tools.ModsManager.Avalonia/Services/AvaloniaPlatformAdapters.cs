@@ -25,26 +25,56 @@ namespace OpenKh.Tools.ModsManager.Services
 
     public sealed class AvaloniaFilePickerService : IFilePickerService
     {
+        private readonly Func<Window> _owner;
+
+        public AvaloniaFilePickerService(Func<Window> owner = null) => _owner = owner ?? ActiveWindow;
+
         public async Task<IReadOnlyList<string>> OpenFilesAsync(OpenFileRequest request, CancellationToken cancellationToken = default)
         {
-            var files = await Storage().OpenFilePickerAsync(new FilePickerOpenOptions { Title = request.Title, AllowMultiple = request.AllowMultiple, FileTypeFilter = Types(request.Filters) });
+            var storage = Storage();
+            var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = request.Title,
+                AllowMultiple = request.AllowMultiple,
+                SuggestedStartLocation = await Folder(storage, request.SuggestedStartLocation),
+                FileTypeFilter = Types(request.Filters),
+            });
             cancellationToken.ThrowIfCancellationRequested();
             return files.Select(x => x.TryGetLocalPath()).Where(x => x != null).ToArray();
         }
         public async Task<string> SaveFileAsync(SaveFileRequest request, CancellationToken cancellationToken = default)
         {
-            var file = await Storage().SaveFilePickerAsync(new FilePickerSaveOptions { Title = request.Title, SuggestedFileName = request.SuggestedFileName, DefaultExtension = request.DefaultExtension, FileTypeChoices = Types(request.Filters) });
+            var storage = Storage();
+            var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = request.Title,
+                SuggestedFileName = request.SuggestedFileName,
+                SuggestedStartLocation = await Folder(storage, request.SuggestedStartLocation),
+                DefaultExtension = request.DefaultExtension,
+                FileTypeChoices = Types(request.Filters),
+                ShowOverwritePrompt = true,
+            });
             cancellationToken.ThrowIfCancellationRequested(); return file?.TryGetLocalPath();
         }
         public async Task<string> OpenFolderAsync(OpenFolderRequest request, CancellationToken cancellationToken = default)
         {
-            var folders = await Storage().OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = request.Title, AllowMultiple = false });
+            var storage = Storage();
+            var folders = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = request.Title,
+                AllowMultiple = false,
+                SuggestedStartLocation = await Folder(storage, request.SuggestedStartLocation),
+            });
             cancellationToken.ThrowIfCancellationRequested(); return folders.FirstOrDefault()?.TryGetLocalPath();
         }
-        private static IStorageProvider Storage() => ActiveWindow().StorageProvider;
+        private IStorageProvider Storage() => _owner()?.StorageProvider
+            ?? throw new InvalidOperationException("A visible Avalonia window is required to open a file picker.");
         internal static Window ActiveWindow() => (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows.FirstOrDefault(x => x.IsActive)
             ?? (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        private static IReadOnlyList<FilePickerFileType> Types(IReadOnlyList<FilePickerFilter> filters) => filters?.Select(x => new FilePickerFileType(x.Name) { Patterns = x.Patterns }).ToArray();
+        public static IReadOnlyList<FilePickerFileType> Types(IReadOnlyList<FilePickerFilter> filters) =>
+            filters?.Select(x => new FilePickerFileType(x.Name) { Patterns = x.Patterns.ToArray() }).ToArray();
+        private static Task<IStorageFolder> Folder(IStorageProvider storage, string path) =>
+            string.IsNullOrWhiteSpace(path) ? Task.FromResult<IStorageFolder>(null) : storage.TryGetFolderFromPathAsync(path);
     }
 
     public sealed class AvaloniaClipboardService : IClipboardService

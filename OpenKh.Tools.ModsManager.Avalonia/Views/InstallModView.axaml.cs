@@ -1,20 +1,21 @@
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using OpenKh.Tools.Common.Avalonia;
+using OpenKh.Tools.ModsManager.Infrastructure;
+using OpenKh.Tools.ModsManager.Interfaces;
 using OpenKh.Tools.ModsManager.Services;
-using System.Collections.Generic;
-using System.Windows;
-using Xe.Tools.Wpf.Commands;
-using Xe.Tools.Wpf.Dialogs;
 
 namespace OpenKh.Tools.ModsManager.Views
 {
     public partial class InstallModView : DialogWindowBase
     {
         public ColorThemeService ColorTheme => ColorThemeService.Instance;
-        private static readonly IEnumerable<FileDialogFilter> _zipFilter = FileDialogFilterComposer
-            .Compose()
-            .AddExtensions("Mod archive", "zip", "kh2pcpatch", "kh1pcpatch", "compcpatch", "bbspcpatch", "dddpcpatch", "lua");
+        private static readonly FilePickerFilter[] _zipFilter =
+        {
+            new("Mod archive", new[] { "*.zip", "*.kh2pcpatch", "*.kh1pcpatch", "*.compcpatch", "*.bbspcpatch", "*.dddpcpatch", "*.lua" }),
+        };
+        private readonly IMessageDialogService _messages;
+        private readonly IFilePickerService _files;
 
         public RelayCommand CloseCommand { get; }
         public string RepositoryName { get; set; }
@@ -22,16 +23,20 @@ namespace OpenKh.Tools.ModsManager.Views
         public bool IsZipFile { get; private set; }
         public bool IsLuaFile { get; private set; } = false;
 
-        public InstallModView()
+        public InstallModView() : this(null, null) { }
+
+        internal InstallModView(IMessageDialogService messages, IFilePickerService files)
         {
             InitializeComponent();
             DataContext = this;
+            _messages = messages ?? new AvaloniaMessageDialogService(() => this);
+            _files = files ?? new AvaloniaFilePickerService(() => this);
 
             CloseCommand = new RelayCommand(_ => Close());
             Opened += (_, _) => txtSourceModUrl.Focus();
         }
 
-        private void Install_Click(object sender, RoutedEventArgs e)
+        private async void Install_Click(object sender, RoutedEventArgs e)
         {
             var isBlocked = false;
             var blockedMessage = string.Empty;
@@ -48,8 +53,12 @@ namespace OpenKh.Tools.ModsManager.Views
 
             if (isBlocked)
             {
-                var result = MessageBox.Show(blockedMessage, $"Warning on installing {RepositoryName}", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                DialogResult = result == MessageBoxResult.Yes;
+                var result = await _messages.ShowAsync(new MessageDialogRequest(
+                    blockedMessage,
+                    $"Warning on installing {RepositoryName}",
+                    MessageDialogKind.Warning,
+                    MessageDialogButtons.YesNo));
+                DialogResult = result == MessageDialogResult.Yes;
             }
             else
                 DialogResult = true;
@@ -57,26 +66,26 @@ namespace OpenKh.Tools.ModsManager.Views
             Close();
         }
 
-        private void InstallLocalFile_Click(object sender, RoutedEventArgs e)
+        private async void InstallLocalFile_Click(object sender, RoutedEventArgs e)
         {
-            FileDialog.OnOpen(fileName =>
+            var files = await _files.OpenFilesAsync(new OpenFileRequest(Filters: _zipFilter));
+            var fileName = files.Count == 0 ? null : files[0];
+            if (fileName == null)
+                return;
+
+            if (!fileName.Contains(".lua"))
             {
-                if (!fileName.Contains(".lua"))
-                {
-                    IsZipFile = true;
-                    RepositoryName = fileName;
-                    DialogResult = true;
-                    Close();
-                }
-                else
-                {
-                    IsZipFile = false;
-                    IsLuaFile = true;
-                    RepositoryName = fileName;
-                    DialogResult = true;
-                    Close();
-                }
-            }, _zipFilter);
+                IsZipFile = true;
+                RepositoryName = fileName;
+            }
+            else
+            {
+                IsZipFile = false;
+                IsLuaFile = true;
+                RepositoryName = fileName;
+            }
+            DialogResult = true;
+            Close();
         }
 
         private void txtSourceModUrl_KeyUp(object sender, KeyEventArgs e)

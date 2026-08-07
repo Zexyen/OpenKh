@@ -4,6 +4,9 @@ using OpenKh.Patcher;
 using OpenKh.Patcher.BarEntryExtractor;
 using OpenKh.Tools.Common.Avalonia;
 using OpenKh.Tools.Common.Wpf;
+using OpenKh.Tools.ModsManager.Avalonia.Infrastructure;
+using OpenKh.Tools.ModsManager.Infrastructure;
+using OpenKh.Tools.ModsManager.Interfaces;
 using OpenKh.Tools.ModsManager.Models.ViewHelper;
 using OpenKh.Tools.ModsManager.Services;
 using System;
@@ -17,7 +20,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using Xe.Tools.Wpf.Commands;
 using YamlDotNet.Serialization;
 
 namespace OpenKh.Tools.ModsManager.Views
@@ -29,6 +31,7 @@ namespace OpenKh.Tools.ModsManager.Views
         private readonly GetActiveWindowService _getActiveWindowService = new GetActiveWindowService();
         private readonly QueryApplyPatchService _queryApplyPatchService =
             new QueryApplyPatchService(new AvaloniaMessageDialogService());
+        private readonly IMessageDialogService _messages = new AvaloniaMessageDialogService();
         private readonly KeywordsMatcherService _keywordsMatcherService = new KeywordsMatcherService();
         private readonly ISerializer _listSer = new SerializerBuilder()
             .Build();
@@ -117,16 +120,16 @@ namespace OpenKh.Tools.ModsManager.Views
                     copyDisposables.Dispose();
                 };
                 var copyVm = copyWin.VM;
-                SimpleAsyncActionCommand<object> proceedCopyCommand;
-                copyVm.ProceedCommand = proceedCopyCommand = new SimpleAsyncActionCommand<object>(
+                AvaloniaAsyncCommand proceedCopyCommand;
+                copyVm.ProceedCommand = proceedCopyCommand = new AvaloniaAsyncCommand(
                     async _ =>
                     {
                         await proceedAsync(copyVm.CopySourceList);
 
                         copyWin.Close();
                     },
-                    task => copyVm.ProceedTask = task
-                )
+                    task => copyVm.ProceedTask = task,
+                    ShowCommandErrorAsync)
                 {
                     IsEnabled = false,
                 };
@@ -170,19 +173,19 @@ namespace OpenKh.Tools.ModsManager.Views
             List<AssetFile> CreateSourceFromArgs(params AssetFile[] assetFiles) => new List<AssetFile>(assetFiles);
 
 
-            SimpleAsyncActionCommand<object> appenderCommand;
+            AvaloniaAsyncCommand appenderCommand;
 
-            VM.AppenderCommand = appenderCommand = new SimpleAsyncActionCommand<object>(
+            VM.AppenderCommand = appenderCommand = new AvaloniaAsyncCommand(
                 async _ =>
                 {
-                    SimpleAsyncActionCommand<object> searchCommand;
+                    AvaloniaAsyncCommand searchCommand;
 
                     var sourceDir = VM.GameDataPath;
                     var destDir = Path.GetDirectoryName(VM.ModYmlFilePath);
 
                     var targetWindow = new SelectModTargetFilesWindow();
                     var targetVm = targetWindow.VM;
-                    targetVm.SearchCommand = searchCommand = new SimpleAsyncActionCommand<object>(
+                    targetVm.SearchCommand = searchCommand = new AvaloniaAsyncCommand(
                         async _ =>
                         {
                             var ifMatch = _keywordsMatcherService.CreateMatcher(targetVm.SearchKeywords);
@@ -206,17 +209,17 @@ namespace OpenKh.Tools.ModsManager.Views
                                     .ToArray()
                             );
                         },
-                        it => targetVm.SearchingTask = it
-                    );
+                        it => targetVm.SearchingTask = it,
+                        ShowCommandErrorAsync);
 
                     var selectionIsGood = new BehaviorSubject<bool>(false);
 
                     var actions = new List<ActionCommand>();
 
-                    SimpleAsyncActionCommand<object> copyMultiCommand;
-                    SimpleAsyncActionCommand<object> copyEachCommand;
-                    SimpleAsyncActionCommand<object> binArcCommand;
-                    SimpleAsyncActionCommand<object> pathCommand;
+                    AvaloniaAsyncCommand copyMultiCommand;
+                    AvaloniaAsyncCommand copyEachCommand;
+                    AvaloniaAsyncCommand binArcCommand;
+                    AvaloniaAsyncCommand pathCommand;
 
                     var hits = Enumerable.Empty<SearchHit>();
 
@@ -224,7 +227,7 @@ namespace OpenKh.Tools.ModsManager.Views
                         new ActionCommand(
                             "Copy multi",
                             "Choose one more multiple files. And then select a representative file at the next window. Only the representative file will be copied. The rest files will just refer to representative file by multi field.",
-                            copyMultiCommand = new SimpleAsyncActionCommand<object>(
+                            copyMultiCommand = new AvaloniaAsyncCommand(
                                 async _ =>
                                 {
                                     await Task.Yield();
@@ -307,7 +310,7 @@ namespace OpenKh.Tools.ModsManager.Views
                                             );
                                         }
                                     );
-                                }
+                                }, exceptionHandler: ShowCommandErrorAsync
                             )
                             {
                                 IsEnabled = false,
@@ -319,7 +322,7 @@ namespace OpenKh.Tools.ModsManager.Views
                         new ActionCommand(
                             "Copy each",
                             "Choose one more multiple files. Each file is simply copied. And then each file is mapped correspondingly.",
-                            copyEachCommand = new SimpleAsyncActionCommand<object>(
+                            copyEachCommand = new AvaloniaAsyncCommand(
                                 async _ =>
                                 {
                                     await Task.Yield();
@@ -384,7 +387,7 @@ namespace OpenKh.Tools.ModsManager.Views
                                             );
                                         }
                                     );
-                                }
+                                }, exceptionHandler: ShowCommandErrorAsync
                             )
                             {
                                 IsEnabled = false,
@@ -396,7 +399,7 @@ namespace OpenKh.Tools.ModsManager.Views
                         new ActionCommand(
                             "binarc",
                             "Choose one more multiple files. Expand each file as bar file. And then you can select the required bar entries to be extracted.",
-                            binArcCommand = new SimpleAsyncActionCommand<object>(
+                            binArcCommand = new AvaloniaAsyncCommand(
                                 async _ =>
                                 {
                                     await Task.Yield();
@@ -554,7 +557,7 @@ namespace OpenKh.Tools.ModsManager.Views
                                             );
                                         }
                                     );
-                                }
+                                }, exceptionHandler: ShowCommandErrorAsync
                             )
                             {
                                 IsEnabled = false,
@@ -566,7 +569,7 @@ namespace OpenKh.Tools.ModsManager.Views
                         new ActionCommand(
                             "path",
                             "Choose one more multiple files. And then, this will display the path list of selected files, as multi field of mod.yml file.",
-                            pathCommand = new SimpleAsyncActionCommand<object>(
+                            pathCommand = new AvaloniaAsyncCommand(
                                 async _ =>
                                 {
                                     await Task.Yield();
@@ -584,7 +587,7 @@ namespace OpenKh.Tools.ModsManager.Views
                                     noteWin.Owner = _getActiveWindowService.GetActiveWindow();
                                     noteWin.Closed += (_, __) => noteWin.Owner?.Focus();
                                     noteWin.Show();
-                                }
+                                }, exceptionHandler: ShowCommandErrorAsync
                             )
                             {
                                 IsEnabled = false,
@@ -633,12 +636,13 @@ namespace OpenKh.Tools.ModsManager.Views
                     };
                     targetWindow.Show();
                 },
-                task => VM.AppenderTask = task
+                task => VM.AppenderTask = task,
+                ShowCommandErrorAsync
             );
 
-            SimpleAsyncActionCommand<object> generateCommand;
+            AvaloniaAsyncCommand generateCommand;
 
-            VM.GenerateCommand = generateCommand = new SimpleAsyncActionCommand<object>(
+            VM.GenerateCommand = generateCommand = new AvaloniaAsyncCommand(
                 async _ =>
                 {
                     await ModifyMetadataAsync(
@@ -651,7 +655,8 @@ namespace OpenKh.Tools.ModsManager.Views
                         }
                     );
                 },
-                    task => VM.GeneratingTask = task
+                    task => VM.GeneratingTask = task,
+                    ShowCommandErrorAsync
                 );
 
             var toolIsGood = new BehaviorSubject<bool>(false);
@@ -826,6 +831,15 @@ namespace OpenKh.Tools.ModsManager.Views
             }
 
             return newAssets;
+        }
+
+        private async Task ShowCommandErrorAsync(Exception exception)
+        {
+            await _messages.ShowAsync(new MessageDialogRequest(
+                exception.Message,
+                "Error",
+                MessageDialogKind.Error,
+                MessageDialogButtons.Ok));
         }
 
         protected override void OnClosed(EventArgs e)

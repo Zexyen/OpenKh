@@ -1,15 +1,21 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using FileDialog = Xe.Tools.Wpf.Dialogs.FileDialog;
+using OpenKh.Tools.ModsManager.Interfaces;
+using OpenKh.Tools.ModsManager.Services;
 
 namespace OpenKh.Tools.ModsManager.UserControls
 {
     public partial class FolderSelectorControl : UserControl
     {
-        public FolderSelectorControl()
+        private readonly IFilePickerService _files;
+
+        public FolderSelectorControl() : this(null) { }
+
+        internal FolderSelectorControl(IFilePickerService files)
         {
             InitializeComponent();
+            _files = files ?? new AvaloniaFilePickerService(() => TopLevel.GetTopLevel(this) as Window);
         }
 
         public static readonly StyledProperty<string> FolderPathProperty =
@@ -21,13 +27,11 @@ namespace OpenKh.Tools.ModsManager.UserControls
             set => SetValue(FolderPathProperty, value);
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            FileDialog.OnFolder(
-                path => FolderPath = path,
-                FolderPath,
-                TopLevel.GetTopLevel(this) as Window
-            );
+            var path = await _files.OpenFolderAsync(new OpenFolderRequest(SuggestedStartLocation: FolderPath));
+            if (path != null)
+                FolderPath = path;
         }
     }
 }
