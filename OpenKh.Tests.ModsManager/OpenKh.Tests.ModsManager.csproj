@@ -21,6 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../OpenKh.Tools.ModsManager/OpenKh.Tools.ModsManager.csproj" />
+        <ProjectReference Include="../OpenKh.Tools.ModsManager.Core/OpenKh.Tools.ModsManager.Core.csproj" />
     </ItemGroup>
 </Project>

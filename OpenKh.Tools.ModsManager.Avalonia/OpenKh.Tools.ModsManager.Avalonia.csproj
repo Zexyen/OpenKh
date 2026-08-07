@@ -16,28 +16,6 @@
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
-  <!-- Business logic is shared with the WPF project (single source of truth
-       during the transition): everything except the WPF UI layer (Views,
-       UserControls, Styles, Converters, App), the WPF-era settings designer
-       and the services that create WPF windows directly, which have Avalonia
-       counterparts in this project. Framework-neutral sources already moved
-       to Core are consumed through its project reference, not source links. -->
-  <ItemGroup>
-    <Compile Include="..\OpenKh.Tools.ModsManager\ViewModels\**\*.cs" LinkBase="Shared\ViewModels"
-             Exclude="..\OpenKh.Tools.ModsManager\ViewModels\DownloadableModViewModel.cs;..\OpenKh.Tools.ModsManager\ViewModels\ModViewModel.cs" />
-    <Compile Include="..\OpenKh.Tools.ModsManager\Services\**\*.cs" LinkBase="Shared\Services"
-             Exclude="..\OpenKh.Tools.ModsManager\Services\SettingBinding.cs;..\OpenKh.Tools.ModsManager\Services\GetActiveWindowService.cs;..\OpenKh.Tools.ModsManager\Services\ProgressWindowService.cs;..\OpenKh.Tools.ModsManager\Services\**\*Wpf*.cs" />
-    <Compile Include="..\OpenKh.Tools.ModsManager\Models\**\*.cs" LinkBase="Shared\Models" />
-    <Compile Include="..\OpenKh.Tools.ModsManager\Exceptions\**\*.cs" LinkBase="Shared\Exceptions" />
-    <Compile Include="..\OpenKh.Tools.ModsManager\ExtensionMethods\**\*.cs" LinkBase="Shared\ExtensionMethods" />
-    <Compile Include="..\OpenKh.Tools.ModsManager\Interfaces\**\*.cs" LinkBase="Shared\Interfaces" />
-    <Compile Include="..\OpenKh.Tools.ModsManager\Helpers.cs" LinkBase="Shared" />
-    <!-- Plain view-model classes that live in the WPF project's Views folder
-         (the .xaml/.xaml.cs views themselves are NOT shared). -->
-    <Compile Include="..\OpenKh.Tools.ModsManager\Views\*VM.cs" LinkBase="Shared\ViewVMs"
-             Exclude="..\OpenKh.Tools.ModsManager\Views\ModSearchVM.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.2" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.2" />

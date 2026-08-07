@@ -1,5 +1,6 @@
 using OpenKh.Tools.ModsManager.Infrastructure;
 using OpenKh.Tools.ModsManager.Interfaces;
+using OpenKh.Tools.ModsManager.Services;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -81,6 +82,13 @@ namespace OpenKh.Tests.ModsManager
             var second = new MessageDialogRequest("Message", "Title", MessageDialogKind.Warning, MessageDialogButtons.YesNo);
 
             Assert.Equal(first, second);
+        }
+
+        [Fact]
+        public void ApplicationUpdateExecutorsExposePlatformCapability()
+        {
+            Assert.Equal(OperatingSystem.IsWindows(), new OpenkhUpdateProceederService().CanExecute);
+            Assert.False(new UnsupportedApplicationUpdateExecutor().CanExecute);
         }
 
         private sealed class TestObservable : ObservableObject
