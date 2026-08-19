@@ -5,6 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
+    <NoWarn>$(NoWarn);CS1998;CS8632</NoWarn>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyTitle>Mods Manager</AssemblyTitle>

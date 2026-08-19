@@ -42,7 +42,12 @@ namespace OpenKh.Tools.ModsManager.Views
 
         public ModSearchVM VM { get; }
 
-        public ModSearchWindow(Action reloadModsList = null)
+        public ModSearchWindow()
+            : this(null)
+        {
+        }
+
+        public ModSearchWindow(Action reloadModsList)
         {
             InitializeComponent();
             DataContext = VM = new ModSearchVM();
@@ -255,7 +260,11 @@ namespace OpenKh.Tools.ModsManager.Views
                     // Use the new method with cancellation support
                     await _downloadableModsService.GetDownloadableModsForGameAsync(
                         gameId: _currentGameId,
-                        emitAsync: async mod => _modEmitter.OnNext(mod),
+                        emitAsync: mod =>
+                        {
+                            _modEmitter.OnNext(mod);
+                            return Task.CompletedTask;
+                        },
                         fallbackToLocalCache: false,
                         cancellationToken: _ct
                     );

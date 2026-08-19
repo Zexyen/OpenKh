@@ -22,6 +22,8 @@ jobs:
         dotnet-version: 8.0.x
     - name: Build Mods Manager (Avalonia)
       run: dotnet build OpenKh.Tools.ModsManager.Avalonia/OpenKh.Tools.ModsManager.Avalonia.csproj -c Release
+    - name: Test Mods Manager (Avalonia Headless)
+      run: dotnet test OpenKh.Tests.ModsManager.Avalonia/OpenKh.Tests.ModsManager.Avalonia.csproj -c Release
     - name: Build AppImage
       run: ./build-linux-modsmanager.sh
 
