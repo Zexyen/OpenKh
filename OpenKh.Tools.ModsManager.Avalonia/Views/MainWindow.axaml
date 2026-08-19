@@ -21,7 +21,8 @@
         <KeyBinding Gesture="Alt+W" Command="{Binding WizardCommand}"/>
     </Window.KeyBindings>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid>
+      <Grid Name="MainContent" RowDefinitions="Auto,*">
 
         <Menu Grid.Row="0">
             <MenuItem Header="_Mods">
@@ -99,5 +100,26 @@
         </ComboBox>
         <local:ModManagerView Grid.Row="1" DataContext="{Binding}"/>
 
+      </Grid>
+
+      <!-- Keep short-lived dialogs in the main native window.  This is more
+           reliable under single-window compositors such as Gamescope. -->
+      <Grid Name="DialogLayer"
+            IsVisible="False"
+            Background="#99000000"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
+        <Border Name="DialogHost"
+                Margin="24"
+                Padding="16"
+                MaxWidth="460"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{Binding ColorTheme.BackgroundColor}"
+                BorderBrush="{DynamicResource ThemeBorderLowBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                BoxShadow="0 8 24 0 #80000000"/>
+      </Grid>
     </Grid>
 </Window>

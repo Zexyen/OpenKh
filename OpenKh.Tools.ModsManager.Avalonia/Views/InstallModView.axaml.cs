@@ -1,18 +1,21 @@
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using OpenKh.Tools.Common.Avalonia;
+using Avalonia.Threading;
 using OpenKh.Tools.ModsManager.Services;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using Xe.Tools.Wpf.Commands;
 using Xe.Tools.Wpf.Dialogs;
 
 namespace OpenKh.Tools.ModsManager.Views
 {
-    public partial class InstallModView : DialogWindowBase
+    public partial class InstallModView : UserControl
     {
         public ColorThemeService ColorTheme => ColorThemeService.Instance;
-        private static readonly IEnumerable<FileDialogFilter> _zipFilter = FileDialogFilterComposer
+        private static readonly IEnumerable<Xe.Tools.Wpf.Dialogs.FileDialogFilter> _zipFilter = FileDialogFilterComposer
             .Compose()
             .AddExtensions("Mod archive", "zip", "kh2pcpatch", "kh1pcpatch", "compcpatch", "bbspcpatch", "dddpcpatch", "lua");
 
@@ -22,6 +25,10 @@ namespace OpenKh.Tools.ModsManager.Views
         public string BranchName { get; set; }
         public bool IsZipFile { get; private set; }
         public bool IsLuaFile { get; private set; } = false;
+        public bool? DialogResult { get; private set; }
+
+        private MainWindow _host;
+        private DispatcherFrame _dialogFrame;
 
         public InstallModView()
         {
@@ -29,7 +36,29 @@ namespace OpenKh.Tools.ModsManager.Views
             DataContext = this;
 
             CloseCommand = new RelayCommand(_ => Close());
-            Opened += (_, _) => txtSourceModUrl.Focus();
+        }
+
+        public bool? ShowDialog()
+        {
+            var desktop = Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+            _host = desktop?.Windows.OfType<MainWindow>().FirstOrDefault(window => window.IsActive)
+                ?? desktop?.MainWindow as MainWindow;
+
+            if (_host is null)
+                return false;
+
+            _dialogFrame = new DispatcherFrame();
+            _host.ShowDialogContent(this);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => txtSourceModUrl.Focus(), DispatcherPriority.Input);
+            Avalonia.Threading.Dispatcher.UIThread.PushFrame(_dialogFrame);
+            return DialogResult;
+        }
+
+        private void Close()
+        {
+            _host?.HideDialogContent(this);
+            if (_dialogFrame is not null)
+                _dialogFrame.Continue = false;
         }
 
         private void Install_Click(object sender, RoutedEventArgs e)
@@ -49,18 +78,20 @@ namespace OpenKh.Tools.ModsManager.Views
 
             if (isBlocked)
             {
-                var result = MessageBox.Show(blockedMessage, $"Warning on installing {RepositoryName}", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                DialogResult = result == MessageBoxResult.Yes;
+                BlockedModWarningText.Text = blockedMessage;
+                InstallForm.IsVisible = false;
+                BlockedModWarning.IsVisible = true;
+                BlockedModWarning.Focus();
+                return;
             }
-            else
-                DialogResult = true;
 
+            DialogResult = true;
             Close();
         }
 
         private void InstallLocalFile_Click(object sender, RoutedEventArgs e)
         {
-            FileDialog.OnOpen(fileName =>
+            Xe.Tools.Wpf.Dialogs.FileDialog.OnOpen(fileName =>
             {
                 if (!fileName.Contains(".lua"))
                 {
@@ -80,12 +111,34 @@ namespace OpenKh.Tools.ModsManager.Views
             }, _zipFilter);
         }
 
-        private void txtSourceModUrl_KeyUp(object sender, KeyEventArgs e)
+        private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void BlockedModCancel_Click(object sender, RoutedEventArgs e)
+        {
+            BlockedModWarning.IsVisible = false;
+            InstallForm.IsVisible = true;
+            txtSourceModUrl.Focus();
+        }
+
+        private void BlockedModConfirm_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = true;
+            Close();
+        }
+
+        private void InstallModView_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
+            {
                 Install_Click(sender, e);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                Close();
+                e.Handled = true;
+            }
 
-            e.Handled = true;
         }
     }
 }

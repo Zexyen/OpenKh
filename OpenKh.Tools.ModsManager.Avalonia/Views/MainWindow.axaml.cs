@@ -42,6 +42,24 @@ namespace OpenKh.Tools.ModsManager.Views
             }
         }
 
+        internal void ShowDialogContent(Control content)
+        {
+            DialogHost.Child = content;
+            DialogLayer.IsVisible = true;
+            MainContent.IsEnabled = false;
+        }
+
+        internal void HideDialogContent(Control content)
+        {
+            if (DialogHost.Child != content)
+                return;
+
+            DialogHost.Child = null;
+            DialogLayer.IsVisible = false;
+            MainContent.IsEnabled = true;
+            Focus();
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             (DataContext as MainViewModel)?.CloseAllWindows();

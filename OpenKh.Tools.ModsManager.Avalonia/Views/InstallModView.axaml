@@ -1,33 +1,47 @@
-<common:DialogWindowBase
+<UserControl
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:common="using:OpenKh.Tools.Common.Avalonia"
         x:Class="OpenKh.Tools.ModsManager.Views.InstallModView"
-        WindowStartupLocation="CenterScreen"
-        CanResize="False"
-        Title="Install a new mod or Lua Script..." Height="160" Width="300" SizeToContent="Height"
-        Background="{Binding ColorTheme.BackgroundColor}" Foreground="{Binding ColorTheme.TextColor}">
-    <Window.KeyBindings>
-        <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}"/>
-    </Window.KeyBindings>
-    <Grid Margin="10" RowDefinitions="*,10,24">
+        MinWidth="320"
+        MaxWidth="440"
+        Focusable="True"
+        KeyDown="InstallModView_KeyDown"
+        Foreground="{Binding ColorTheme.TextColor}">
+    <Grid>
+      <Grid Name="InstallForm" RowDefinitions="Auto,Auto,Auto" RowSpacing="14">
         <StackPanel Grid.Row="0">
-            <TextBlock Margin="0 0 0 3">Add a new mod from GitHub</TextBlock>
+            <TextBlock FontSize="20" FontWeight="SemiBold" Margin="0 0 0 12">Install a mod</TextBlock>
+            <TextBlock Margin="0 0 0 4">GitHub repository</TextBlock>
             <TextBox Name="txtSourceModUrl" Margin="0 0 0 5"
                      Watermark="eg. openkh/my-kingdomhearts-mod"
-                     Text="{Binding RepositoryName}" KeyUp="txtSourceModUrl_KeyUp" />
+                     Text="{Binding RepositoryName, UpdateSourceTrigger=PropertyChanged}" />
 
-            <TextBlock Margin="0 0 0 3">Branch (optional)</TextBlock>
+            <TextBlock Margin="0 8 0 4">Branch (optional)</TextBlock>
             <TextBox Name="txtBranchName" Margin="0 0 0 5"
                      Watermark="eg. main"
-                     Text="{Binding BranchName}" KeyUp="txtSourceModUrl_KeyUp" />
+                     Text="{Binding BranchName, UpdateSourceTrigger=PropertyChanged}" />
 
-            <TextBlock Margin="0 0 0 3">Install a Mod Archive or Lua Script</TextBlock>
-            <Button Margin="0 0 0 5" Click="InstallLocalFile_Click">Select and install Mod Archive or Lua Script</Button>
+            <TextBlock Margin="0 12 0 4">Local archive or Lua script</TextBlock>
+            <Button Click="InstallLocalFile_Click" HorizontalAlignment="Stretch">
+                Select a file to install
+            </Button>
         </StackPanel>
 
-        <Grid Grid.Row="2" ColumnDefinitions="*,60">
-            <Button Grid.Column="1" Click="Install_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Install</Button>
-        </Grid>
+        <Separator Grid.Row="1"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Click="Cancel_Click" MinWidth="80">Cancel</Button>
+            <Button Click="Install_Click" MinWidth="80">Install</Button>
+        </StackPanel>
+      </Grid>
+
+      <StackPanel Name="BlockedModWarning" IsVisible="False" Spacing="14">
+        <TextBlock FontSize="20" FontWeight="SemiBold">Installation warning</TextBlock>
+        <TextBlock Name="BlockedModWarningText" TextWrapping="Wrap" MaxWidth="400"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <Button Click="BlockedModCancel_Click" MinWidth="80">Go back</Button>
+          <Button Click="BlockedModConfirm_Click" MinWidth="110">Install anyway</Button>
+        </StackPanel>
+      </StackPanel>
     </Grid>
-</common:DialogWindowBase>
+</UserControl>
