@@ -105,7 +105,35 @@ namespace OpenKh.Tools.ModsManager.Services
         }
 
 
-        private static string StoragePath = OpenkhInstallation.Directory;
+        private static string StoragePath = GetWritableStoragePath();
+
+        private static string GetWritableStoragePath()
+        {
+            var installationDirectory = OpenkhInstallation.Directory;
+            if (IsDirectoryWritable(installationDirectory))
+                return installationDirectory;
+
+            var dataDirectory = Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData),
+                "OpenKh",
+                "ModsManager");
+            Directory.CreateDirectory(dataDirectory);
+            return dataDirectory;
+        }
+
+        private static bool IsDirectoryWritable(string directory)
+        {
+            try
+            {
+                var probe = Path.Combine(directory, $".openkh-write-probe-{System.Guid.NewGuid():N}");
+                using (File.Create(probe, 1, FileOptions.DeleteOnClose)) { }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         private static string ConfigPath = Path.Combine(StoragePath, "mods-manager.yml");
         private static string EnabledModsPathKH1 = Path.Combine(StoragePath, "mods-KH1.txt");
