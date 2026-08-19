@@ -62,7 +62,7 @@ namespace OpenKh.Tools.ModsManager.Services
         {
             get
             {
-                var modsPath = ConfigurationService.ModsGamePath;
+                var modsPath = ConfigurationService.InstalledModsPath;
                 foreach (var dir in Directory.GetDirectories(modsPath))
                 {
                     var authorName = Path.GetFileName(dir);
@@ -76,7 +76,7 @@ namespace OpenKh.Tools.ModsManager.Services
                     if (File.Exists(Path.Combine(dir, ModMetadata)))
                         yield return authorName;
                 }
-                var collectionsPath = ConfigurationService.ModCollectionsPath;
+                var collectionsPath = ConfigurationService.InstalledCollectionsPath;
                 foreach (var dir in Directory.GetDirectories(collectionsPath))
                 {
                     var authorName = Path.GetFileName(dir);
@@ -121,11 +121,12 @@ namespace OpenKh.Tools.ModsManager.Services
             bool isLuaFile,
             Action<string> progressOutput = null,
             Action<float> progressNumber = null,
+            string platformUrl = null,
             string branchName = null)
         {
             if (!isZipFile && !isLuaFile)
             {
-                return Task.Run(() => InstallModFromGithub(name, progressOutput, progressNumber, branchName));
+                return Task.Run(() => InstallModFromGit(name, progressOutput, progressNumber, platformUrl, branchName));
             }
             else if (isZipFile && !isLuaFile)
             {
@@ -277,10 +278,11 @@ namespace OpenKh.Tools.ModsManager.Services
             }
         }
 
-        public static async Task InstallModFromGithub(
+        public static async Task InstallModFromGit(
             string repositoryName,
             Action<string> progressOutput = null,
             Action<float> progressNumber = null,
+            string platformName = null,
             string branchName = null)
         {
             var parts = repositoryName.Split('/');
@@ -294,7 +296,7 @@ namespace OpenKh.Tools.ModsManager.Services
             if (!string.IsNullOrWhiteSpace(branchName))
             {
                 progressOutput?.Invoke($"Fetching file {ModMetadata} from branch {branchName}");
-                var isValidMod = await RepositoryService.IsFileExists(repositoryName, branchName, ModMetadata);
+                var isValidMod = await RepositoryService.IsFileExists(repositoryName, branchName, ModMetadata, progressOutput, progressNumber, platformName);
                 if (!isValidMod)
                     throw new BranchNotValidException(repositoryName, branchName);
             }
@@ -302,7 +304,7 @@ namespace OpenKh.Tools.ModsManager.Services
             {
                 branchName = DefaultGitBranch;
                 progressOutput?.Invoke($"Fetching file {ModMetadata} from {branchName}");
-                var isValidMod = await RepositoryService.IsFileExists(repositoryName, branchName, ModMetadata);
+                var isValidMod = await RepositoryService.IsFileExists(repositoryName, branchName, ModMetadata, progressOutput, progressNumber, platformName);
                 if (!isValidMod)
                 {
                     progressOutput?.Invoke($"{ModMetadata} not found, fetching default branch name");
@@ -311,7 +313,7 @@ namespace OpenKh.Tools.ModsManager.Services
                         throw new RepositoryNotFoundException(repositoryName);
 
                     progressOutput?.Invoke($"Fetching file {ModMetadata} from {branchName}");
-                    isValidMod = await RepositoryService.IsFileExists(repositoryName, branchName, ModMetadata);
+                    isValidMod = await RepositoryService.IsFileExists(repositoryName, branchName, ModMetadata, progressOutput, progressNumber, platformName);
                 }
 
                 if (!isValidMod)
@@ -363,7 +365,16 @@ namespace OpenKh.Tools.ModsManager.Services
                     return true;
                 };
 
-                Repository.Clone($"https://github.com/{repositoryName}", modPath, options);
+                var _fetchPlatformUrl = new Uri("https://github.com/");
+                var _fetchRelativeUri = new Uri(_fetchPlatformUrl, $"{repositoryName}");
+
+                if (!String.IsNullOrWhiteSpace(platformName))
+                {
+                    _fetchPlatformUrl = new Uri(platformName.Contains("http") ? platformName : "https://" + platformName);
+                    _fetchRelativeUri = new Uri(_fetchPlatformUrl, $"{repositoryName}");
+                }
+
+                Repository.Clone(_fetchRelativeUri.ToString(), modPath, options);
             });
             if (IsCollection(repositoryName))
                 await MoveToCollection(repositoryName);
@@ -436,11 +447,11 @@ namespace OpenKh.Tools.ModsManager.Services
         }
 
         public static string GetModPath(string repositoryName) =>
-            Path.Combine(ConfigurationService.ModsGamePath, repositoryName);
+            Path.Combine(ConfigurationService.InstalledModsPath, repositoryName);
         public static string GetModsGamePath(string repositoryName, string game) =>
-            Path.Combine(ConfigurationService.ModsGamePath, "..", game, repositoryName);
+            Path.Combine(ConfigurationService.InstalledModsPath, "..", game, repositoryName);
         public static string GetCollectionPath(string repositoryName) =>
-            Path.Combine(ConfigurationService.ModCollectionsPath, repositoryName);
+            Path.Combine(ConfigurationService.InstalledCollectionsPath, repositoryName);
 
         public static IEnumerable<ModModel> GetMods(IEnumerable<string> modNames)
         {
@@ -517,11 +528,11 @@ namespace OpenKh.Tools.ModsManager.Services
 
         public static Task<bool> RunPatcherAsync(bool fastMode) => Task.Run(() => Handle(() =>
         {
-            if (Directory.Exists(ConfigurationService.GameModPath))
+            if (Directory.Exists(ConfigurationService.CompiledModPath))
             {
                 try
                 {
-                    Directory.Delete(ConfigurationService.GameModPath, true);
+                    Directory.Delete(ConfigurationService.CompiledModPath, true);
                 }
                 catch (Exception ex)
                 {
@@ -529,7 +540,7 @@ namespace OpenKh.Tools.ModsManager.Services
                 }
             }
 
-            Directory.CreateDirectory(ConfigurationService.GameModPath);
+            Directory.CreateDirectory(ConfigurationService.CompiledModPath);
 
             var patcherProcessor = new PatcherProcessor();
             var modsList = GetMods(EnabledMods).ToList();
@@ -546,7 +557,7 @@ namespace OpenKh.Tools.ModsManager.Services
 
                 patcherProcessor.Patch(
                     Path.Combine(ConfigurationService.GameDataLocation, ConfigurationService.LaunchGame),
-                    ConfigurationService.GameModPath,
+                    ConfigurationService.CompiledModPath,
                     mod.Metadata,
                     mod.Path,
                     ConfigurationService.GameEdition,
@@ -558,7 +569,7 @@ namespace OpenKh.Tools.ModsManager.Services
                     enabledOptionalAssets);
             }
 
-            using var packageMapWriter = new StreamWriter(Path.Combine(ConfigurationService.GameModPath, "patch-package-map.txt"));
+            using var packageMapWriter = new StreamWriter(Path.Combine(ConfigurationService.CompiledModPath, "patch-package-map.txt"));
             foreach (var entry in packageMap)
                 packageMapWriter.WriteLine(entry.Key + " $$$$ " + entry.Value);
             packageMapWriter.Flush();

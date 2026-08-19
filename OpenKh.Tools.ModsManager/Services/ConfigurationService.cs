@@ -11,6 +11,29 @@ namespace OpenKh.Tools.ModsManager.Services
 {
     public static class ConfigurationService
     {
+        private class LegacyConfigMigration
+        {
+            private static readonly IDeserializer _legacyvaluedeserializer =
+                new DeserializerBuilder()
+                .IgnoreFields()
+                .IgnoreUnmatchedProperties()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            public string ModCollectionPath { get; internal set; }
+            public string ModCollectionsPath { get; internal set; }
+            public string GameModPath { get; internal set; }
+            public string GameDataPath { get; internal set; }
+
+            public static LegacyConfigMigration Open(string fileName)
+            {
+                if (!File.Exists(fileName))
+                    return new LegacyConfigMigration();
+
+                using var reader = new StreamReader(fileName);
+                return _legacyvaluedeserializer.Deserialize<LegacyConfigMigration>(reader);
+            }
+        }
+
         private class Config
         {
             private static readonly IDeserializer _deserializer =
@@ -26,15 +49,17 @@ namespace OpenKh.Tools.ModsManager.Services
                 .Build();
 
             public int WizardVersionNumber { get; set; }
+
             public double WindowWidth { get; internal set; }
             public double WindowHeight { get; internal set; }
             public int WindowX { get; internal set; }
             public int WindowY { get; internal set; }
             public bool WindowMaximized { get; internal set; }
-            public string ModCollectionPath { get; internal set; }
-            public string ModCollectionsPath { get; internal set; }
-            public string GameModPath { get; internal set; }
-            public string GameDataPath { get; internal set; }
+            public string ExtractedGameDataPath { get; internal set; }
+            public string InstalledModsPath { get; internal set; }
+            public string InstalledCollectionsPath { get; internal set; }
+            public string CompiledModPath { get; internal set; }
+
             public int GameEdition { get; internal set; } = 1;
             public string IsoLocationKH2 { get; internal set; }
             public string IsoLocationKH1 { get; internal set; }
@@ -79,40 +104,9 @@ namespace OpenKh.Tools.ModsManager.Services
             }
         }
 
-        private static string StoragePath = GetWritableStoragePath();
 
-        // The tool historically keeps its configuration and mods next to the
-        // executable (portable install). That is not possible when the
-        // executable directory is read-only — e.g. the Linux AppImage runs
-        // from a read-only squashfs mount — so fall back to the per-user
-        // configuration directory in that case.
-        private static string GetWritableStoragePath()
-        {
-            var exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            if (IsDirectoryWritable(exeDir))
-                return exeDir;
+        private static string StoragePath = OpenkhInstallation.Directory;
 
-            var dataDir = Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData),
-                "OpenKh",
-                "ModsManager");
-            Directory.CreateDirectory(dataDir);
-            return dataDir;
-        }
-
-        private static bool IsDirectoryWritable(string dir)
-        {
-            try
-            {
-                var probe = Path.Combine(dir, $".openkh-write-probe-{System.Guid.NewGuid():N}");
-                using (File.Create(probe, 1, FileOptions.DeleteOnClose)) { }
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
         private static string ConfigPath = Path.Combine(StoragePath, "mods-manager.yml");
         private static string EnabledModsPathKH1 = Path.Combine(StoragePath, "mods-KH1.txt");
         private static string EnabledModsPathKH2 = Path.Combine(StoragePath, "mods-KH2.txt");
@@ -124,6 +118,7 @@ namespace OpenKh.Tools.ModsManager.Services
         private static string EnabledCollectionModsPathBBS = Path.Combine(StoragePath, "collection-mods-BBS.json");
         private static string EnabledCollectionModsPathRECOM = Path.Combine(StoragePath, "collection-mods-ReCoM.json");
         private static string EnabledCollectionModsPathKH3D = Path.Combine(StoragePath, "collection-mods-KH3D.json");
+        private static readonly LegacyConfigMigration _legacyconfig = LegacyConfigMigration.Open(ConfigPath);
         private static readonly Config _config = Config.Open(ConfigPath);
         public static string PresetPath = Path.Combine(StoragePath, "presets");
         private static readonly HashSet<string> _supportedGames = new HashSet<string>()
@@ -146,9 +141,19 @@ namespace OpenKh.Tools.ModsManager.Services
 
         static ConfigurationService()
         {
-            string modsPath = Path.GetFullPath(Path.Combine(ModsGamePath, ".."));
-            if (!Directory.Exists(Path.Combine(modsPath, "collections")))
-                Directory.CreateDirectory(Path.Combine(modsPath, "collections"));
+            if (!string.IsNullOrEmpty(_legacyconfig.GameDataPath) && string.IsNullOrEmpty(_config.ExtractedGameDataPath))
+                _config.ExtractedGameDataPath = _legacyconfig.GameDataPath;
+            if (!string.IsNullOrEmpty(_legacyconfig.ModCollectionPath) && string.IsNullOrEmpty(_config.InstalledModsPath))
+                _config.InstalledModsPath = _legacyconfig.ModCollectionPath;
+            if (!string.IsNullOrEmpty(_legacyconfig.ModCollectionsPath) && string.IsNullOrEmpty(_config.InstalledCollectionsPath))
+                _config.InstalledCollectionsPath = _legacyconfig.ModCollectionsPath;
+            if (!string.IsNullOrEmpty(_legacyconfig.GameModPath) && string.IsNullOrEmpty(_config.CompiledModPath))
+                _config.CompiledModPath = _legacyconfig.GameModPath;
+
+
+            string modsPath = Path.GetFullPath(Path.Combine(InstalledModsPath, ".."));
+            if (!Directory.Exists(Path.Combine(InstalledCollectionsPath)))
+                Directory.CreateDirectory(InstalledCollectionsPath);
             if (!Directory.Exists(Path.Combine(modsPath, "kh2")))
                 Directory.CreateDirectory(Path.Combine(modsPath, "kh2"));
             if (!Directory.Exists(Path.Combine(modsPath, "kh1")))
@@ -288,43 +293,62 @@ namespace OpenKh.Tools.ModsManager.Services
                 _config.Save(ConfigPath);
             }
         }
-
-        public static string ModsGamePath
-        {
-            get => Path.Combine(_config.ModCollectionPath ?? Path.GetFullPath(StoragePath), "mods", LaunchGame);
-            set
-            {
-                _config.ModCollectionPath = value;
-                _config.Save(ConfigPath);
-            }
-        }
-
-        public static string ModCollectionsPath
-        {
-            get => _config.ModCollectionsPath ?? Path.GetFullPath(Path.Combine(StoragePath, "mods", "collections"));
-            set
-            {
-                _config.ModCollectionsPath = value;
-                _config.Save(ConfigPath);
-            }
-        }
-
-        public static string GameModPath
-        {
-            get => Path.Combine(_config.ModCollectionPath ?? Path.GetFullPath(StoragePath), "mod", LaunchGame);
-            set
-            {
-                _config.GameModPath = value;
-                _config.Save(ConfigPath);
-            }
-        }
-
         public static string GameDataLocation
         {
-            get => _config.GameDataPath ?? Path.GetFullPath(Path.Combine(StoragePath, "data"));
+            get => _config.ExtractedGameDataPath ?? Path.GetFullPath(Path.Combine(StoragePath, "data"));
             set
             {
-                _config.GameDataPath = value;
+                _config.ExtractedGameDataPath = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static string InstalledModsPath
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_config.InstalledModsPath) && _config.InstalledModsPath != _config.CompiledModPath)
+                    return Path.Combine(_config.InstalledModsPath, LaunchGame);
+                else
+                    return Path.Combine(_config.InstalledModsPath ?? Path.GetFullPath(StoragePath), "mods", LaunchGame);
+            }
+            set
+            {
+                _config.InstalledModsPath = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static string InstalledCollectionsPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_config.InstalledCollectionsPath))
+                    return Path.GetFullPath(Path.Combine(StoragePath, "mods", "collections"));
+                else if (_config.InstalledCollectionsPath != _config.InstalledModsPath)
+                    return _config.InstalledCollectionsPath;
+                else
+                    return Path.Combine(_config.InstalledCollectionsPath, "collections");
+            }
+            set
+            {
+                _config.InstalledCollectionsPath = value;
+                _config.Save(ConfigPath);
+            }
+        }
+
+        public static string CompiledModPath
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_config.CompiledModPath) && _config.CompiledModPath != _config.InstalledModsPath)
+                    return Path.Combine(_config.CompiledModPath, LaunchGame);
+                else
+                    return Path.Combine(_config.CompiledModPath ?? Path.GetFullPath(StoragePath), "mod", LaunchGame);
+            }
+            set
+            {
+                _config.CompiledModPath = value;
                 _config.Save(ConfigPath);
             }
         }
