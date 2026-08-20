@@ -37,4 +37,29 @@ public class AvaloniaViewTests
         Assert.NotNull(window.Content);
         window.Close();
     }
+
+    private static readonly Func<Window>[] AdditionalWindows =
+    {
+        () => new PresetsWindow(),
+        () => new NotepadWindow(),
+        () => new SelectModTargetFilesWindow(),
+        () => new CopySourceFilesWindow(),
+        () => new DebuggingWindow(),
+        () => new InstallModProgressWindow(),
+        () => new WorkInProgressWindow(),
+        () => new YamlGeneratorWindow(),
+        () => new SetupWizardWindow(),
+    };
+
+    [AvaloniaFact]
+    public void AdditionalWindowsCanLoadTheirXaml()
+    {
+        foreach (var createWindow in AdditionalWindows)
+        {
+            var window = createWindow();
+
+            Assert.True(window.Content is not null, $"{window.GetType().Name} did not load its XAML content.");
+            window.Close();
+        }
+    }
 }

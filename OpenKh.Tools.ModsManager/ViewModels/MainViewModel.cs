@@ -673,7 +673,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                     {
                         PC = false;
                         PCSX2 = true;
-                        string? launchIso;
+                        string launchIso;
                         switch (_launchGame)
                         {
                             case "kh2":
@@ -689,7 +689,7 @@ namespace OpenKh.Tools.ModsManager.ViewModels
                                 launchIso = null;
                                 break;
                         }
-                        GameInfoModel? game;
+                        GameInfoModel game;
                         if (!String.IsNullOrEmpty(launchIso))
                         {
                             game = GameService.DetectGameId(launchIso);
